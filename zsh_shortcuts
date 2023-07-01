@@ -7,7 +7,16 @@ function ligolo-setup() {
 	FINAL_PORT=${PORT:-11601}
 	eval sudo ip tuntap add user $FINAL_NAME mode tun ligolo
 	eval sudo ip link set ligolo up
+	echo "Use the following command to connect back to the server"
+	echo
+	echo "==Windows=="
+	echo '.\agent-windows.exe -connect <IP>:$FINAL_PORT -ignore-cert'
+	echo
+	echo "==Linux=="
+	echo "./agent-linux -connect <IP>:$FINAL_PORT -ignore-cert"
+	echo
 	eval /opt/tools/ligolo-ng/proxy -laddr 0.0.0.0:$FINAL_PORT -selfcert
+
 }
 
 function add-ligolo-route() {
