@@ -1,0 +1,32 @@
+function ligolo-setup() {
+	echo "Name of the user to add (Enter for current user): " 
+	read NAME
+	echo "Port to listen on (Enter for default port 11601): " 
+	read PORT
+	FINAL_NAME=${NAME:-$USER}
+	FINAL_PORT=${PORT:-11601}
+	eval sudo ip tuntap add user $FINAL_NAME mode tun ligolo
+	eval sudo ip link set ligolo up
+	eval /opt/tools/ligolo-ng/proxy -laddr 0.0.0.0:$FINAL_PORT -selfcert
+}
+
+function add-ligolo-route() {
+	echo "Enter the range to add: "
+	read range
+	eval sudo ip route add $range dev ligolo
+}
+
+function createdir() {
+	echo "Enter a name for the directory: "
+	read NAME
+	DIRNAME=${NAME:-newdir}
+	echo "Enter an IP if there is one (useful for HTB): "
+	read IP
+	FINAL_IP=${IP:-""}
+	mkdir $DIRNAME
+	cd $DIRNAME
+	mkdir -p {working,admin,files,findings/{0-tentative,1-critical,2-high,3-medium,4-low,5-informational},notes/{hosts,services},osint/{breach-data,dorking,hostnames,infrastructure,source-repos,usernames},output,scans/{nessus,nmap,nuclei,tls},screenshots/{initial,evidence}}
+	echo "export name=$DIRNAME" > .envrc
+	echo "export ip=$FINAL_IP" >> .envrc
+	direnv allow
+}
