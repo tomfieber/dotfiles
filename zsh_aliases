@@ -1,0 +1,6 @@
+alias crackmapexec='poetry run --directory /opt/tools/CrackMapExec crackmapexec'
+alias cme='poetry run --directory /opt/tools/CrackMapExec crackmapexec'
+alias cmedb='poetry run --directory /opt/tools/CrackMapExec cmedb'
+alias subl='/opt/sublime_text/sublime_text'
+alias ll='ls -la --group-directories-first --color=auto'
+alias vim='nvim'
