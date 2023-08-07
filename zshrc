@@ -93,18 +93,18 @@ if [ -n "$force_color_prompt" ]; then
 fi
 
 configure_prompt() {
-    #prompt_symbol=@
     prompt_symbol=🎃
+    prompt_symbol2=@
     # Skull emoji for root terminal
     #[ "$EUID" -eq 0 ] && prompt_symbol=💀
     case "$PROMPT_ALTERNATIVE" in
         twoline)
-            PROMPT=$'%F{#FFE6C7}┌─$(get_vpn_ip)${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{#FF6000}%n'$prompt_symbol$'%m%b%F{#FFE6C7})-[%B%F{#FFA559}%(6~.%-1~/…/%4~.%5~)%b%F{#FFE6C7}]\n└─%B%(#.%F{#FF6000}#.%F{#FF6000}$)%b%F{reset} '
+            PROMPT=$'%F{#FFE6C7}┌──$(get_vpn_ip)${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{#FF6000}%n'$prompt_symbol$'%m%b%F{#FFE6C7})-[%B%F{#FFA559}%(6~.%-1~/…/%4~.%5~)%b%F{#FFE6C7}]\n└─╼ %B%(#.%F{#FF6000}#.%F{#FF6000}$)%b%F{reset} '
             # Right-side prompt with exit codes and background processes
             #RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
             ;;
         oneline)
-            PROMPT=$'${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{%(#.red.blue)}%n@%m%b%F{reset}:%B%F{%(#.blue.green)}%~%b%F{reset}%(#.#.$) '
+            PROMPT=$'%F{#FFE6C7}┌──[%B%F{green}$(date +"%d-%b-%y %R")%b%F{#FFE6C7}]-${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{#FF6000}consultant'$prompt_symbol2$'trustfoundry%b%F{#FFE6C7})-[%B%F{#FFA559}%(6~.%-1~/…/%4~.%5~)%b%F{#FFE6C7}]\n└─╼ %B%(#.%F{#FF6000}#.%F{#FF6000}$)%b%F{reset} '
             RPROMPT=
             ;;
         backtrack)
