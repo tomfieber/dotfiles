@@ -49,8 +49,8 @@ zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
 # History configurations
 HISTFILE=~/.zsh_history
-HISTSIZE=1000
-SAVEHIST=2000
+HISTSIZE=10000
+SAVEHIST=20000
 setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
 setopt hist_ignore_dups       # ignore duplicated commands history list
 setopt hist_ignore_space      # ignore commands that start with space
@@ -93,18 +93,17 @@ if [ -n "$force_color_prompt" ]; then
 fi
 
 configure_prompt() {
-    prompt_symbol=🎃
-    prompt_symbol2=@
+    prompt_symbol=@
     # Skull emoji for root terminal
     #[ "$EUID" -eq 0 ] && prompt_symbol=💀
     case "$PROMPT_ALTERNATIVE" in
         twoline)
-            PROMPT=$'%F{#FFE6C7}┌──$(get_vpn_ip)${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{#FF6000}%n'$prompt_symbol$'%m%b%F{#FFE6C7})-[%B%F{#FFA559}%(6~.%-1~/…/%4~.%5~)%b%F{#FFE6C7}]\n└─╼ %B%(#.%F{#FF6000}#.%F{#FF6000}$)%b%F{reset} '
+            PROMPT=$'%F{%(#.blue.red)}┌──$(get_vpn_ip)${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.green)}%(#.%n.th0m12)%F{yellow}'$prompt_symbol$'%F{cyan}%m%b%F{%(#.blue.red)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.red)}]\n└─╼ %B%(#.%F{red}#.%F{yellow}$)%b%F{reset} '
             # Right-side prompt with exit codes and background processes
             #RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
             ;;
         oneline)
-            PROMPT=$'%F{#FFE6C7}┌──[%B%F{green}$(date +"%d-%b-%y %R")%b%F{#FFE6C7}]-${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{#FF6000}consultant'$prompt_symbol2$'trustfoundry%b%F{#FFE6C7})-[%B%F{#FFA559}%(6~.%-1~/…/%4~.%5~)%b%F{#FFE6C7}]\n└─╼ %B%(#.%F{#FF6000}#.%F{#FF6000}$)%b%F{reset} '
+            PROMPT=$'%F{%(#.blue.green)}┌──[%B%F{yellow}$(date +"%d-%b-%y %R")%b%F{%(#.blue.green)}]-${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.blue)}consultant'$prompt_symbol$'trustfoundry%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}]\n└─╼ %B%(#.%F{red}#.%F{blue}$)%b%F{reset} '
             RPROMPT=
             ;;
         backtrack)
@@ -259,7 +258,14 @@ if [ -f /etc/zsh_command_not_found ]; then
     . /etc/zsh_command_not_found
 fi
 
-# pyenv
+# Chaos key
+export CHAOS_KEY=wKIUlV1plhPRQWXchrr10Y4mSvQNRpiQoGWlHg1T95h6iP4L4UxmPN4RZi1lvFZo
+
+
+# Virtualenvs
+export WORKON_HOME=$HOME/.local/virtualenvs
+source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
+
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
