@@ -37,7 +37,8 @@ function createdir() {
 	FINAL_IP=${IP:-""}
 	mkdir $DIRNAME
 	cd $DIRNAME
-	mkdir -p {working,admin,files,findings/{0-tentative,1-critical,2-high,3-medium,4-low,5-informational},notes/{hosts,services},osint/{breach-data,dorking,hostnames,infrastructure,source-repos,usernames},output,scans/{nessus,nmap,nuclei,tls},screenshots/{initial,evidence}}
+	mkdir -p {1-admin,2-credentials,3-files,4-discovery/{1-alive-hosts,2-nmap},5-application-discovery/{1-scans/{1-screenshots-initial,2-nessus,3-tls,4-nuclei},2-interesting-hosts},6-exploitation,7-post-exploitation,8-findings/{0-tentative,1-critical,2-high,3-medium,4-low,5-informational},9-retest}
+	echo "# TODO" > TODO.md
 	echo "export name=$DIRNAME" > .envrc
 	echo "export ip=$FINAL_IP" >> .envrc
 	direnv allow
@@ -48,6 +49,10 @@ function get_vpn_ip() {
 	ip="$(ip a s "${interface}" 2>/dev/null | grep -o -P '(?<=inet )[0-9]{1,3}(\.[0-9]{1,3}){3}')"
 	if [[ "${ip}" != "" ]]
 	then
-		print -P "%F{#FFE6C7}[%B%F{#FFA559}$ip%b%F{#FFE6C7}]─"
+		print -P "%F{%(#.blue.red)}[%B%F{yellow}$ip%b%F{%(#.blue.red)}]─"
 	fi
+}
+
+function start-bloodhound() {
+	docker-compose -f /opt/tools/BloodHound/examples/docker-compose/docker-compose.yml up
 }
