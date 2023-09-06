@@ -35,10 +35,24 @@ function createdir() {
 	echo "Enter an IP if there is one (useful for HTB): "
 	read IP
 	FINAL_IP=${IP:-""}
+	echo "Enter a HOST IP (e.g., a tun0 VPN IP): "
+	read LHOST
+	FINAL_LHOST=${LHOST:-""}
 	mkdir $DIRNAME
 	cd $DIRNAME
-	mkdir -p {1-admin,2-credentials,3-files,4-discovery/{1-alive-hosts,2-nmap},5-application-discovery/{1-scans/{1-screenshots-initial,2-nessus,3-tls,4-nuclei},2-interesting-hosts},6-exploitation,7-post-exploitation,8-findings/{0-tentative,1-critical,2-high,3-medium,4-low,5-informational},9-retest}
-	echo "# TODO" > TODO.md
+	mkdir -p {Admin,Deliverables,Evidence/{Findings,"Logging output","Misc files",Notes,OSINT,Scans/{"AD Enumeration",Service,Vuln,Web},Wireless},Retest}
+	echo "# Administrative Information" > Evidence/Notes/"1. Administrative Information.md"
+	echo "# Scoping Information" > Evidence/Notes/"2. Scoping Information.md"
+	echo "# Activity Log" > Evidence/Notes/"3. Activity Log.md"
+	echo "# Payload Log" > Evidence/Notes/"4. Payload Log.md"
+	echo "# OSINT Data" > Evidence/Notes/"5. OSINT Data.md"
+	echo "# Credentials" > Evidence/Notes/"6. Credentials.md"
+	echo "# Web Application Research" > Evidence/Notes/"7. Web Application Research.md"
+	echo "# Vulnerability Scan Research" > Evidence/Notes/"8. Vulnerability Scan Research.md"
+	echo "# Service Enumeration Research" > Evidence/Notes/"9. Service Enumeration Research.md"
+	echo "# AD Enumeration Research" > Evidence/Notes/"10. AD Enumeration Research.md"
+	echo "# Attack Path" > Evidence/Notes/"11. Attack Path.md"
+	echo "# Findings" > Evidence/Notes/"12. Findings.md"
 	echo "export name=$DIRNAME" > .envrc
 	echo "export ip=$FINAL_IP" >> .envrc
 	direnv allow
