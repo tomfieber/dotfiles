@@ -1,6 +1,7 @@
 # ~/.zshrc file for zsh interactive shells.
 # see /usr/share/doc/zsh/examples/zshrc for examples
-export PATH=$HOME/.local/bin:$HOME/.cargo/env:$HOME/go/bin:/usr/local/go/bin:/usr/sbin:$PATH
+export PATH=$HOME/.local/bin:$HOME/.cargo/env:$HOME/go/bin:/usr/local/go/bin:/usr/sbin:/opt/tools/oracle/instantclient_19_10:$PATH
+export LD_LIBRARY_PATH=/opt/tools/oracle/instantclient_19_10:$LD_LIBRARY_PATH
 
 setopt autocd              # change directory just by typing its name
 #setopt correct            # auto correct mistakes
@@ -98,12 +99,12 @@ configure_prompt() {
     #[ "$EUID" -eq 0 ] && prompt_symbol=💀
     case "$PROMPT_ALTERNATIVE" in
         twoline)
-            PROMPT=$'%F{%(#.blue.green)}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.blue)}%n'$prompt_symbol$'%m%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}]\n└─%B%(#.%F{red}#.%F{blue}$)%b%F{reset} '
+            PROMPT=$'%F{%(#.blue.red)}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.#FF6000)}%n'$prompt_symbol$'%m%b%F{%(#.blue.red)})-[%B%F{#FFA559}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.red)}]\n└─%B%(#.%F{red}#.%F{#FF6000}$)%b%F{reset} '
             # Right-side prompt with exit codes and background processes
             #RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
             ;;
         oneline)
-            PROMPT=$'${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{%(#.red.blue)}%n@%m%b%F{reset}:%B%F{%(#.blue.green)}%~%b%F{reset}%(#.#.$) '
+		PROMPT=$'$(date +"%d-%b-%y %R") ${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{%(#.red.blue)}%n@%m%b%F{reset}:%B%F{%(#.blue.green)}%~%b%F{reset}%(#.#.$) '
             RPROMPT=
             ;;
         backtrack)
