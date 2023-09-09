@@ -13,10 +13,10 @@ function ligolo-setup() {
 	echo "Use the following command to connect back to the server"
 	echo
 	echo "==Windows=="
-	echo "agent-windows.exe -connect $ip:$FINAL_PORT -ignore-cert"
+	echo -e $'Start-Process -FilePath C:\\Windows\\Tasks\\\\agent.exe -ArgumentList "-connect","'$ip':'$FINAL_PORT'","-ignore-cert"'
 	echo
 	echo "==Linux=="
-	echo "agent-linux -connect $ip:$FINAL_PORT -ignore-cert"
+	echo "( nohup ./agent -connect $ip:$FINAL_PORT -ignore-cert & )"
 	echo
 	eval /opt/tools/ligolo-ng/proxy -laddr 0.0.0.0:$FINAL_PORT -selfcert
 
