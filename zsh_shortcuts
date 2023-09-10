@@ -1,16 +1,18 @@
+autoload -Uz colors && colors
+
 function ligolo-setup() {
 	interface="$(ip tuntap show | grep -v ligolo | cut -d : -f1 | head -n 1)"
 	ip="$(ip a s "${interface}" 2>/dev/null \
         | grep -o -P '(?<=inet )[0-9]{1,3}(\.[0-9]{1,3}){3}')"
-	echo "Name of the user to add (Enter for current user): " 
+	print -- $fg_bold[yellow]Name of the user to add (Enter for current user): $reset_color 
 	read NAME
-	echo "Port to listen on (Enter for default port 11601): " 
+	print -- $fg_bold[yellow]Port to listen on (Enter for default port 11601): $reset_color 
 	read PORT
 	FINAL_NAME=${NAME:-$USER}
 	FINAL_PORT=${PORT:-11601}
 	eval sudo ip tuntap add user $FINAL_NAME mode tun ligolo
 	eval sudo ip link set ligolo up
-	echo "Use the following command to connect back to the server"
+	print -- $fg_bold[green]Use the following command to connect back to the server$reset_color
 	echo
 	echo "==Windows=="
 	echo -e $'Start-Process -FilePath C:\\Windows\\Tasks\\\\agent.exe -ArgumentList "-connect","'$ip':'$FINAL_PORT'","-ignore-cert"'
@@ -69,4 +71,9 @@ function get_vpn_ip() {
 
 function start-bloodhound() {
 	docker-compose -f /opt/tools/BloodHound/examples/docker-compose/docker-compose.yml up
+}
+
+function link-impacket() {
+	print -- $fg_bold[green][+] Linking impacket$reset_color
+	for i in $(ls /home/thomas/.local/pipx/venvs/impacket/bin/ | egrep ".py$");do sudo ln -s /home/thomas/.local/pipx/venvs/impacket/bin/$i /usr/local/bin/$i;done
 }
