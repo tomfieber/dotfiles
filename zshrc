@@ -96,61 +96,37 @@ fi
 
 configure_prompt() {
     # prompt_symbol=㉿
-    # # Skull emoji for root terminal
-    # #[ "$EUID" -eq 0 ] && prompt_symbol=💀
-    # case "$PROMPT_ALTERNATIVE" in
-    #     twoline)
-    #         PROMPT=$'%F{%(#.blue.green)}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.blue)}%n'$prompt_symbol$'%m%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}]\n└─%B%(#.%F{red}#.%F{blue}$)%b%F{reset} '
-    #         # Right-side prompt with exit codes and background processes
-    #         #RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
-    #         ;;
-    #     oneline)
-	# 	PROMPT=$'$(date +"%d-%b-%y %R") ${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{%(#.red.blue)}%n@%m%b%F{reset}:%B%F{%(#.blue.green)}%~%b%F{reset}%(#.#.$) '
-    #         RPROMPT=
-    #         ;;
-    #     backtrack)
-    #         PROMPT=$'${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{red}%n@%m%b%F{reset}:%B%F{blue}%~%b%F{reset}%(#.#.$) '
-    #         RPROMPT=
-    #         ;;
-    # esac
-    # unset prompt_symbol
-    #IP1=$(ip -4 addr | grep -v 127.0.0.1 | grep -v secondary | grep eth0 | grep -Po "inet \K[\d.]+") # Get normal interface, may need to be changed
+
+
     VPNCONN=$'$(/opt/tools/vpnpanel.sh)'
     
     IP2=$(ip -4 addr | grep -v 127.0.0.1 | grep -v secondary | grep tun0 | grep -Po "inet \K[\d.]+") # Get VPN IP if connected
     IP3=$(ip -4 addr | grep -v 127.0.0.1 | grep -v secondary | grep wlan0 | grep -Po "inet \K[\d.]+") # Get Wireless IP if connected
 
     # Create prompts based on which interfaces are found
-    DT=$(date +"%d-%b-%y %R")
-    DTG="%F{green}─🮤🗓️  %F{cyan}$DT%b%F{green}🮥"
+    DT=$'$(date +"%d-%b-%y %R")'
+    DTG="%F{green}─[%F{magenta}$DT%F{green}]"
 
 
-    # if [ $IP2 ]; then
-    #     VPN="%F{green}─🮤🔐 %F{yellow}$'$VPNCONN'%b%F{green}🮥"
-    # else
-    #     VPN=""
-    # fi
-
-    VPN="%F{green}─🮤🔐 %F{yellow}$VPNCONN%b%F{green}🮥"
+    VPN="%F{green}─[🔐 %F{yellow}$VPNCONN%F{green}]"
 
     if [ $IP3 ]; then
-        WIFI="%F{green}─🮤🛜 %F{red}$IP3%F{green}🮥"
+        WIFI="%F{green}─[🛜 %F{red}$IP3%F{green}]"
     else
         WIFI=""
     fi
 
-    DIR=$'%B%F{yellow}%(6~.%-1~/…/%4~.%5~)%F{green}'
-    NAME=$'%F{blue}%n'
+    DIR=$'%F{yellow}%(6~.%-1~/…/%4~.%5~)%b%F{green}'
+    NAME=$'%F{blue}✝️ %n'
 
     # Assemble the prompt in pieces for readability
-    LINE1=$'%F{green}┌──🮤'$NAME'%F{green}🮥'$DTG$VPN$WIFI
-    LINE2=$'\n├──🮤%F{yellow}📂 '$DIR'🮥'
-    LINE3=$'\n└─╼ %F{blue}%(#.%F{red}#.%F{blue}$) '
+    LINE1=$'%F{green}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}('$NAME'%F{green})'$DTG$VPN$WIFI
+    LINE2=$'\n├──[%F{yellow}📂 '$DIR']'
+    LINE3=$'\n└─╼ %F{blue}%(#.%F{red}#.%F{blue}$)%f '
 
     TIME=$'$(date +"%d-%b-%y %R")'
 
     PROMPT=$LINE1$LINE2$LINE3
-    #RPROMPT=$'%F{green}[%F{reset}'$TIME'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)%F{green}]'
 }
 
 # The following block is surrounded by two delimiters.
