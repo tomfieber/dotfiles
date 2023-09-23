@@ -95,38 +95,26 @@ fi
 
 
 configure_prompt() {
-    # prompt_symbol=㉿
-
-
-    VPNCONN=$'$(/opt/tools/vpnpanel.sh)'
-    
-    IP2=$(ip -4 addr | grep -v 127.0.0.1 | grep -v secondary | grep tun0 | grep -Po "inet \K[\d.]+") # Get VPN IP if connected
-    IP3=$(ip -4 addr | grep -v 127.0.0.1 | grep -v secondary | grep wlan0 | grep -Po "inet \K[\d.]+") # Get Wireless IP if connected
+    FRAME_COLOR="green"
+    DATE_COLOR="magenta"
+    PATH_COLOR="yellow"
+    NAME_COLOR="blue"
+    ROOT_PROMPT="red"
+    NORMAL_PROMPT="blue"
 
     # Create prompts based on which interfaces are found
     DT=$'$(date +"%d-%b-%y %R")'
-    DTG="%F{green}─[%F{magenta}$DT%F{green}]"
-
-
-    VPN="%F{green}─[🔐 %F{yellow}$VPNCONN%F{green}]"
-
-    if [ $IP3 ]; then
-        WIFI="%F{green}─[🛜 %F{red}$IP3%F{green}]"
-    else
-        WIFI=""
-    fi
-
-    DIR=$'%F{yellow}%(6~.%-1~/…/%4~.%5~)%b%F{green}'
-    NAME=$'%F{blue}✝️ %n'
+    DTG="%F{$FRAME_COLOR}─[%F{$DATE_COLOR}$DT%F{$FRAME_COLOR}]"
+    DIR="%F{$FRAME_COLOR}─[%F{$PATH_COLOR}%(6~.%-1~/…/%4~.%5~)%b%F{$FRAME_COLOR}]"
+    NAME="%F{$FRAME_COLOR}(%F{$NAME_COLOR}%n%F{$FRAME_COLOR})"
 
     # Assemble the prompt in pieces for readability
-    LINE1=$'%F{green}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}('$NAME'%F{green})'$DTG$VPN$WIFI
-    LINE2=$'\n├──[%F{yellow}📂 '$DIR']'
-    LINE3=$'\n└─╼ %F{blue}%(#.%F{red}#.%F{blue}$)%f '
+    LINE1=$'%F{'$FRAME_COLOR'}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}'$NAME$DIR$DTG
+    LINE2=$'\n└─╼ %(#.%F{'$ROOT_PROMPT'}#.%F{'$NORMAL_PROMPT'}$)%f '
 
     TIME=$'$(date +"%d-%b-%y %R")'
 
-    PROMPT=$LINE1$LINE2$LINE3
+    PROMPT=$LINE1$LINE2
 }
 
 # The following block is surrounded by two delimiters.
