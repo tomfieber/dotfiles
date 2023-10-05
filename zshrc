@@ -98,19 +98,19 @@ configure_prompt() {
     FRAME_COLOR="green"
     DATE_COLOR="magenta"
     PATH_COLOR="yellow"
-    NAME_COLOR="blue"
-    ROOT_PROMPT="red"
-    NORMAL_PROMPT="blue"
+    ROOT_COLOR="red"
+    USER_COLOR="blue"
 
     # Create prompts based on which interfaces are found
     DT=$'$(date +"%d-%b-%y %R")'
     DTG="%F{$FRAME_COLOR}─[%F{$DATE_COLOR}$DT%F{$FRAME_COLOR}]"
     DIR="%F{$FRAME_COLOR}─[%F{$PATH_COLOR}%(6~.%-1~/…/%4~.%5~)%b%F{$FRAME_COLOR}]"
-    NAME="%F{$FRAME_COLOR}(%F{$NAME_COLOR}%n%F{$FRAME_COLOR})"
+    NAME="%F{$FRAME_COLOR}(%(#.%F{$ROOT_COLOR}.%F{$USER_COLOR})%n%F{$FRAME_COLOR})"
+    PSYMBOL=' %(#.%F{'$ROOT_COLOR'}#.%F{'$USER_COLOR'}$)%f '
 
     # Assemble the prompt in pieces for readability
     LINE1=$'%F{'$FRAME_COLOR'}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}'$NAME$DIR$DTG
-    LINE2=$'\n└─╼ %(#.%F{'$ROOT_PROMPT'}#.%F{'$NORMAL_PROMPT'}$)%f '
+    LINE2=$'\n└─╼ %(#.%F{'$ROOT_COLOR'}#.%F{'$USER_COLOR'}$)%f '
 
     TIME=$'$(date +"%d-%b-%y %R")'
 
