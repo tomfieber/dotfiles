@@ -18,7 +18,7 @@ sudo apt update && sudo apt full-upgrade
 
 # Install some basic necessities 
 echo "[+] Installing some basic necessities"
-sudo apt install -y git libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv virtualenvwrapper python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
+sudo apt install -y git golang libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv virtualenvwrapper python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
 
 # Autoremove
 sudo apt autoremove
@@ -88,7 +88,9 @@ git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-m
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 
 # Add zsh_shortcuts and zsh_aliases
-
+cp zsh_aliases $HOME/.zsh_aliases
+cp zsh_shortcuts $HOME/.zsh_shortcuts
+cp zshrc $HOME/.zshrc
 
 
 echo -e "${green}Install complete.${NC}" 
