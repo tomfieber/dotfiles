@@ -91,6 +91,8 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 cp zsh_aliases $HOME/.zsh_aliases
 cp zsh_shortcuts $HOME/.zsh_shortcuts
 cp zshrc $HOME/.zshrc
+cp th0m12.zsh-theme $HOME/.oh-my-zsh/themes/th0m12.zsh-theme
+cp tmux $HOME/.tmux.conf
 
 
 echo -e "${green}Install complete.${NC}" 
