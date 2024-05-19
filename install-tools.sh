@@ -47,8 +47,6 @@ echo "[+] Installing uncover"
 go install -v github.com/projectdiscovery/uncover/cmd/uncover@latest
 echo "[+] Installing amass"
 go install -v github.com/owasp-amass/amass/v4/...@master
-echo "[+] Installing blacksheepwall"
-go install github.com/tomsteele/blacksheepwall@latest
 echo "[+] Installing ffuf"
 go install github.com/ffuf/ffuf/v2@latest
 echo "[+] Installing kerbrute"
@@ -79,6 +77,18 @@ fi
 # Install rustup
 echo "[+] Installing rustup"
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+
+# Install oh-my-zsh
+# Install oh-my-zsh unattended
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+# Install zsh-autosuggestions and zsh-syntax-highlighting
+git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+# Add zsh_shortcuts and zsh_aliases
+
 
 
 echo -e "${green}Install complete.${NC}" 
