@@ -1,4 +1,4 @@
-PROMPT="%{$fg_bold[yellow]%}$(date -u +"%d-%b-%y %R") %(?:%{$fg_bold[green]%}%1{➜%} :%{$fg_bold[red]%}%1{➜%} ) %{$fg[cyan]%}%c%{$reset_color%}"
+PROMPT="%{$fg_bold[yellow]%}$(date -u +"%d-%b-%y %R") %(?:%{$fg_bold[green]%}%1{➜%} :%{$fg_bold[red]%}%1{➜%} ) %{$fg[cyan]%}%(4~.%-1~/…/%2~.%3~)%{$reset_color%}"
 PROMPT+=' $(git_prompt_info)'
 
 ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg_bold[blue]%}git:(%{$fg[red]%}"
