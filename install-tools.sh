@@ -58,41 +58,48 @@ go install -v github.com/RedTeamPentesting/pretender@latest
 echo "=========="
 echo
 
+
+# Install rustup
+echo "[+] Installing rustup"
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+echo
+
 # Installing pipx tools
 echo "${GREEN}[+] Installing some tools from pipx${NC}"
 pipx install certipy-ad
 pipx install bloodhound
 pipx install git+https://github.com/blacklanternsecurity/MANSPIDER
 pipx install tldr
+pipx install git+https://github.com/Pennyw0rth/NetExec
 echo "=========="
 echo
-
 
 # Install pyenv
 echo "[+] Installing pyenv"
 if [ ! -d $HOME/.pyenv ]; then
     curl https://pyenv.run | bash
 fi
-
-# Install rustup
-echo "[+] Installing rustup"
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+echo
 
 
 # Install oh-my-zsh
 # Install oh-my-zsh unattended
+echo "[+] Installing oh-my-zsh"
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 
 # Install zsh-autosuggestions and zsh-syntax-highlighting
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+echo
 
 # Add zsh_shortcuts and zsh_aliases
+echo "[+] Installing dotfiles"
 cp zsh_aliases $HOME/.zsh_aliases
 cp zsh_shortcuts $HOME/.zsh_shortcuts
 cp zshrc $HOME/.zshrc
 cp th0m12.zsh-theme $HOME/.oh-my-zsh/themes/th0m12.zsh-theme
 cp tmux $HOME/.tmux.conf
+echo
 
 
 echo -e "${green}Install complete.${NC}" 
