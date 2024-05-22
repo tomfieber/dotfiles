@@ -4,7 +4,7 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/env:/usr/local/go/bin:/usr/sbin:$PATH
+export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/env:$PATH
 
 SYSARCH=$(uname -m)
 echo -e "${GREEN}System Architecture:${NC} $SYSARCH"
@@ -82,22 +82,11 @@ fi
 echo
 
 
-# Install oh-my-zsh
-# Install oh-my-zsh unattended
-echo "[+] Installing oh-my-zsh"
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-# Install zsh-autosuggestions and zsh-syntax-highlighting
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-echo
-
 # Add zsh_shortcuts and zsh_aliases
 echo "[+] Installing dotfiles"
 cp zsh_aliases $HOME/.zsh_aliases
 cp zsh_shortcuts $HOME/.zsh_shortcuts
 cp zshrc $HOME/.zshrc
-cp th0m12.zsh-theme $HOME/.oh-my-zsh/themes/th0m12.zsh-theme
 cp tmux $HOME/.tmux.conf
 echo
 
