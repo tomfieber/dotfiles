@@ -1,6 +1,8 @@
 # ~/.zshrc file for zsh interactive shells.
 # see /usr/share/doc/zsh/examples/zshrc for examples
-export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/env:$PATH
+export GOROOT=/usr/local/go
+export GOPATH=$HOME/go
+export PATH=$HOME/.local/bin:$GOPATH/bin:$GOROOT/bin:$HOME/.cargo/env:$PATH
 
 setopt autocd              # change directory just by typing its name
 #setopt correct            # auto correct mistakes
