@@ -4,6 +4,9 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# Ensure wget is installed (for Debian)
+sudo apt install wget -y 
+
 # Install golang
 GOVERSION=$(curl -s -L https://golang.org/VERSION?m=text | head -n 1)
 DOWNLOAD_URL="https://go.dev/dl/${GOVERSION}.linux-amd64.tar.gz"
