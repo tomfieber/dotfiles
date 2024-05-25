@@ -95,12 +95,12 @@ if [ -n "$force_color_prompt" ]; then
 fi
 
 configure_prompt() {
-    prompt_symbol=㉿
+    prompt_symbol=@
     # Skull emoji for root terminal
     #[ "$EUID" -eq 0 ] && prompt_symbol=💀
     case "$PROMPT_ALTERNATIVE" in
         twoline)
-                PROMPT=$'%F{%(#.blue.green)}┌─[%F{magenta}$(date -u +"%d-%b-%y %R")%F{%(#.blue.green)}]─${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.blue)}%n'$prompt_symbol$'%m%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}]\n└─╼ %B%(#.%F{red}#.%F{blue}$)%b%F{reset} '
+          PROMPT=$'%F{%(#.blue.green)}┌─[%F{magenta}$(date -u +"%d-%b-%y %R")%F{%(#.blue.green)}]─${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{white}%n%B%F{yellow}'$prompt_symbol$'%B%F{cyan}%m%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}]\n└─╼ [%B%(?.%F{yellow}*.%F{red}*)%F{%(#.blue.green)}]%b%F{reset}%(#.#.$) '
             # Right-side prompt with exit codes and background processes
             #RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
             ;;
@@ -247,6 +247,14 @@ fi
 alias ll='ls -l'
 alias la='ls -A'
 alias l='ls -CF'
+
+if [ -f $HOME/.zsh_aliases ]; then
+  . $HOME/.zsh_aliases
+fi
+
+if [ -f $HOME/.zsh_shortcuts ]; then
+  . $HOME/.zsh_shortcuts
+fi
 
 # enable auto-suggestions based on the history
 if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
