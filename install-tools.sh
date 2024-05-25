@@ -5,7 +5,10 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Install golang
-sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.3.linux-amd64.tar.gz
+GOVERSION=$(curl -s -L https://golang.org/VERSION?m=text | head -n 1)
+DOWNLOAD_URL="https://go.dev/dl/${GOVERSION}.linux-amd64.tar.gz"
+wget ${DOWNLOAD_URL} -O /tmp/go.tar.gz
+sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf /tmp/go.tar.gz
 
 export GOROOT=/usr/local/go
 export GOPATH=$HOME/go
