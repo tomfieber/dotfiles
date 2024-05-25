@@ -28,7 +28,7 @@ fi
 
 # Install some basic necessities 
 echo "[+] Installing some basic necessities"
-sudo apt install -y git golang libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv virtualenvwrapper python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
+sudo apt install -y git pipx zsh zsh-autosuggestions zsh-syntax-highlighting libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv virtualenvwrapper python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
 
 # Autoremove
 sudo apt autoremove
@@ -81,6 +81,7 @@ pipx install bloodhound
 pipx install git+https://github.com/blacklanternsecurity/MANSPIDER
 pipx install tldr
 pipx install git+https://github.com/Pennyw0rth/NetExec
+pipx install coercer
 echo "=========="
 echo
 
