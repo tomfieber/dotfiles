@@ -104,5 +104,9 @@ cp zshrc $HOME/.zshrc
 cp tmux $HOME/.tmux.conf
 echo
 
+# Attempt to change the shell to ZSH
+chsh -s $(which zsh)
+
+
 
 echo -e "${green}Install complete.${NC}" 
