@@ -4,7 +4,12 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/env:$PATH
+# Install golang
+sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.3.linux-amd64.tar.gz
+
+export GOROOT=/usr/local/go
+export GOPATH=$HOME/go
+export PATH=$HOME/.local/bin:$GOPATH/bin:$GOROOT/bin:$HOME/.cargo/env:$PATH
 
 SYSARCH=$(uname -m)
 echo -e "${GREEN}System Architecture:${NC} $SYSARCH"
