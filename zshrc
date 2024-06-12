@@ -1,8 +1,6 @@
 # ~/.zshrc file for zsh interactive shells.
 # see /usr/share/doc/zsh/examples/zshrc for examples
-export GOROOT=/usr/local/go
-export GOPATH=$HOME/go
-export PATH=$HOME/.local/bin:$GOPATH/bin:$GOROOT/bin:$HOME/.cargo/env:$PATH
+export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/env:/snap/bin:$PATH
 
 setopt autocd              # change directory just by typing its name
 #setopt correct            # auto correct mistakes
@@ -51,8 +49,8 @@ zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
 # History configurations
 HISTFILE=~/.zsh_history
-HISTSIZE=1000
-SAVEHIST=2000
+HISTSIZE=10000
+SAVEHIST=20000
 setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
 setopt hist_ignore_dups       # ignore duplicated commands history list
 setopt hist_ignore_space      # ignore commands that start with space
@@ -95,17 +93,17 @@ if [ -n "$force_color_prompt" ]; then
 fi
 
 configure_prompt() {
-    prompt_symbol=@
+    prompt_symbol=㉿
     # Skull emoji for root terminal
     #[ "$EUID" -eq 0 ] && prompt_symbol=💀
     case "$PROMPT_ALTERNATIVE" in
         twoline)
-          PROMPT=$'%F{#E95420}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{#77216F}%n'$prompt_symbol$'%m%b%F{#E95420})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{#E95420}]\n└─%b%F{#77216F}%(#.#.$)%b%f '
+            PROMPT=$'%F{%(#.blue.green)}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.blue)}%n'$prompt_symbol$'%m%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}]\n└─%B%(#.%F{red}#.%F{blue}$)%b%F{reset} '
             # Right-side prompt with exit codes and background processes
             #RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
             ;;
         oneline)
-            PROMPT=$'${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{%(#.red.blue)}%n@%m%b%F{reset}:%B%F{%(#.blue.green)}%~%b%F{reset}%(#.#.$) '
+                PROMPT=$'${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{magenta}$(date +"%d-%b %H:%M") %B%F{%(?.green.red)}%1~ %b%f%(#.#.$) '
             RPROMPT=
             ;;
         backtrack)
@@ -119,7 +117,7 @@ configure_prompt() {
 # The following block is surrounded by two delimiters.
 # These delimiters must not be modified. Thanks.
 # START KALI CONFIG VARIABLES
-PROMPT_ALTERNATIVE=twoline
+PROMPT_ALTERNATIVE='oneline'
 NEWLINE_BEFORE_PROMPT=yes
 # STOP KALI CONFIG VARIABLES
 
@@ -248,14 +246,6 @@ alias ll='ls -l'
 alias la='ls -A'
 alias l='ls -CF'
 
-if [ -f $HOME/.zsh_aliases ]; then
-  . $HOME/.zsh_aliases
-fi
-
-if [ -f $HOME/.zsh_shortcuts ]; then
-  . $HOME/.zsh_shortcuts
-fi
-
 # enable auto-suggestions based on the history
 if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
     . /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
@@ -268,9 +258,15 @@ if [ -f /etc/zsh_command_not_found ]; then
     . /etc/zsh_command_not_found
 fi
 
-# Chaos key
-export CHAOS_KEY=wKIUlV1plhPRQWXchrr10Y4mSvQNRpiQoGWlHg1T95h6iP4L4UxmPN4RZi1lvFZo
+if [ -f $HOME/.zsh_aliases ]; then
+  . $HOME/.zsh_aliases
+fi
 
+if [ -f $HOME/.zsh_shortcuts ]; then
+  . $HOME/.zsh_shortcuts
+fi
+
+### PUT KEYS HERE ###
 
 # Virtualenvs
 export WORKON_HOME=$HOME/.local/virtualenvs
