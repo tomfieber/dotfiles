@@ -4,7 +4,15 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/env:$PATH
+# Install golang
+GOVERSION=$(curl -s -L https://golang.org/VERSION?m=text | head -n 1)
+DOWNLOAD_URL="https://go.dev/dl/${GOVERSION}.linux-amd64.tar.gz"
+wget ${DOWNLOAD_URL} -O /tmp/go.tar.gz
+sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf /tmp/go.tar.gz
+
+export GOROOT=/usr/local/go
+export GOPATH=$HOME/go
+export PATH=$HOME/.local/bin:$GOPATH/bin:$GOROOT/bin:$HOME/.cargo/env:$PATH
 
 SYSARCH=$(uname -m)
 echo -e "${GREEN}System Architecture:${NC} $SYSARCH"
@@ -75,7 +83,7 @@ pipx install certipy-ad
 pipx install bloodhound
 pipx install git+https://github.com/blacklanternsecurity/MANSPIDER
 pipx install tldr
-pipx install git+https://github.com/Pennyw0rth/NetExec
+#pipx install git+https://github.com/Pennyw0rth/NetExec
 pipx install coercer
 pipx install pypykatz
 pipx install mitm6
