@@ -106,7 +106,7 @@ cp zsh_shortcuts $HOME/.zsh_shortcuts
 cp tmux $HOME/.tmux.conf
 echo
 
-
-echo -e "${green}Install complete.${NC}" 
+sudo chown -R thomas:thomas /opt
+echo -e "${green}Install complete.${NC}"
 
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
