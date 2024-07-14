@@ -3,8 +3,8 @@ set -g history-limit 50000
 
 set -g default-terminal "screen-256color"
 
-set -g status-bg orange
-set -g status-fg black
+#set -g status-bg orange
+#set -g status-fg black
 
 # Rebind prefix key
 # remap prefix from 'C-b' to 'C-a'
