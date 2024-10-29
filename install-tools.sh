@@ -5,6 +5,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Install golang
+# TODO: Add logic to detect the OS and only run this if it's not Kali
 GOVERSION=$(curl -s -L https://golang.org/VERSION?m=text | head -n 1)
 DOWNLOAD_URL="https://go.dev/dl/${GOVERSION}.linux-amd64.tar.gz"
 wget ${DOWNLOAD_URL} -O /tmp/go.tar.gz
@@ -24,11 +25,6 @@ echo "[+] $DESKTOP desktop environment detected"
 # Do an update
 sudo apt update && sudo apt full-upgrade
 
-# Install mate-specific tools
-if [ $DESKTOP == 'mate' ]; then
-    sudo apt install diodon mate-desktop-environment-extras
-fi
-
 # Install some basic necessities 
 echo "[+] Installing some basic necessities"
 sudo apt install -y git direnv pipx forensics-all libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv virtualenvwrapper python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
@@ -40,24 +36,8 @@ echo
 
 
 # Install Go tools
-echo "[+] Install chaos"
-go install -v github.com/projectdiscovery/chaos-client/cmd/chaos@latest
-echo "[+] Installing subfinder"
-go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-echo "[+] Installing nuclei"
-go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
-echo "[+] Installing naabu"
-go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
-echo "[+] Installing httpx"
-go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
-echo "[+] Installing katana"
-go install github.com/projectdiscovery/katana/cmd/katana@latest
-echo "[+] Installing dnsx"
-go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
-echo "[+] Installing tlsx"
-go install github.com/projectdiscovery/tlsx/cmd/tlsx@latest
-echo "[+] Installing uncover"
-go install -v github.com/projectdiscovery/uncover/cmd/uncover@latest
+echo "[+] Install pdtm"
+go install -v github.com/projectdiscovery/pdtm/cmd/pdtm@latest
 echo "[+] Installing amass"
 go install -v github.com/owasp-amass/amass/v4/...@master
 echo "[+] Installing ffuf"
@@ -83,7 +63,7 @@ pipx install certipy-ad
 pipx install bloodhound
 pipx install git+https://github.com/blacklanternsecurity/MANSPIDER
 pipx install tldr
-#pipx install git+https://github.com/Pennyw0rth/NetExec
+pipx install git+https://github.com/Pennyw0rth/NetExec
 pipx install coercer
 pipx install pypykatz
 pipx install mitm6
@@ -106,7 +86,7 @@ cp zsh_shortcuts $HOME/.zsh_shortcuts
 cp tmux $HOME/.tmux.conf
 echo
 
-sudo chown -R thomas:thomas /opt
+sudo chown -R $USER:$USER /opt
 echo -e "${green}Install complete.${NC}"
 
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
