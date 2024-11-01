@@ -4,16 +4,9 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# Install golang
-# TODO: Add logic to detect the OS and only run this if it's not Kali
-GOVERSION=$(curl -s -L https://golang.org/VERSION?m=text | head -n 1)
-DOWNLOAD_URL="https://go.dev/dl/${GOVERSION}.linux-amd64.tar.gz"
-wget ${DOWNLOAD_URL} -O /tmp/go.tar.gz
-sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf /tmp/go.tar.gz
 
-export GOROOT=/usr/local/go
 export GOPATH=$HOME/go
-export PATH=$HOME/.local/bin:$GOPATH/bin:$GOROOT/bin:$HOME/.cargo/env:$PATH
+export PATH=$HOME/.local/bin:$GOPATH/bin:$HOME/.cargo/env:/snap/bin:$PATH
 
 SYSARCH=$(uname -m)
 echo -e "${GREEN}System Architecture:${NC} $SYSARCH"
@@ -27,7 +20,7 @@ sudo apt update && sudo apt full-upgrade
 
 # Install some basic necessities 
 echo "[+] Installing some basic necessities"
-sudo apt install -y git direnv pipx forensics-all libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv virtualenvwrapper python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
+sudo apt install -y git direnv pipx libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv virtualenvwrapper python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
 
 # Autoremove
 sudo apt autoremove
@@ -53,9 +46,9 @@ echo
 
 
 # Install rustup
-echo "[+] Installing rustup"
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-echo
+# echo "[+] Installing rustup"
+# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+# echo
 
 # Installing pipx tools
 echo "${GREEN}[+] Installing some tools from pipx${NC}"
@@ -90,3 +83,4 @@ sudo chown -R $USER:$USER /opt
 echo -e "${green}Install complete.${NC}"
 
 
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
