@@ -1,4 +1,4 @@
-PROMPT=$'%B%F{cyan}%u%f%b in %B%F{#e95420}%(4~.%-1~/…/%2~.%3~)\n%B%F{%(?.green.red)}➜  %b%f'
+PROMPT=$'%B%F{cyan}%n%f%b in %B%F{#e95420}%(4~.%-1~/…/%2~.%3~)\n%B%F{%(?.green.red)}➜  %b%f'
 
 setopt autocd              # change directory just by typing its name
 #setopt correct            # auto correct mistakes
