@@ -61,6 +61,8 @@ pipx install coercer
 pipx install pypykatz
 pipx install mitm6
 pipx install ad-miner
+pipx install impacket
+pipx install certsync
 echo "=========="
 echo
 
