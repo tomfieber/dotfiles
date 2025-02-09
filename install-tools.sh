@@ -60,9 +60,10 @@ pipx install git+https://github.com/Pennyw0rth/NetExec
 pipx install coercer
 pipx install pypykatz
 pipx install mitm6
-pipx install ad-miner
-pipx install impacket
+pipx install 'git+https://github.com/Mazars-Tech/AD_Miner.git'
+pipx install 'git+https://github.com/forta/impacket.git'
 pipx install certsync
+pipx install parsuite
 echo "=========="
 echo
 
@@ -76,13 +77,10 @@ echo
 
 # Add zsh_shortcuts and zsh_aliases
 echo "[+] Installing dotfiles"
-cp zsh_aliases $HOME/.zsh_aliases
-cp zsh_shortcuts $HOME/.zsh_shortcuts
+cp zsh_aliases $HOME/.bash_aliases
+cp zsh_shortcuts $HOME/.bash_shortcuts
 cp tmux $HOME/.tmux.conf
 echo
 
 sudo chown -R $USER:$USER /opt
 echo -e "${green}Install complete.${NC}"
-
-
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
