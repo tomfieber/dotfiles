@@ -58,8 +58,6 @@ cd ~/Tools/massdns/
 make
 sudo ln -s bin/massdns /usr/local/bin/massdns
 
-# Install PD tools
-pdtm -ia
 
 # Installing pipx tools
 echo "${GREEN}[+] Installing some tools from pipx${NC}"
@@ -72,7 +70,7 @@ pipx install coercer
 pipx install pypykatz
 pipx install mitm6
 pipx install 'git+https://github.com/Mazars-Tech/AD_Miner.git'
-pipx install 'git+https://github.com/forta/impacket.git'
+pipx install 'git+https://github.com/fortra/impacket.git'
 pipx install certsync
 pipx install parsuite
 echo "=========="
