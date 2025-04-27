@@ -20,12 +20,19 @@ sudo apt update && sudo apt full-upgrade
 
 # Install some basic necessities 
 echo "[+] Installing some basic necessities"
-sudo apt install -y git direnv pipx libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv virtualenvwrapper python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
+sudo apt install -y git direnv pipx snapd make libssl-dev libpcap-dev libffi-dev python3-netifaces python-dev-is-python3 build-essential libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
 
 # Autoremove
 sudo apt autoremove
 echo "=========="
 echo
+
+sudo systemctl enable --now snapd
+
+# Install from snap
+sudo snap install go --classic
+sudo snap install rustup --classic
+rustup default stable
 
 
 # Install Go tools
@@ -44,11 +51,15 @@ go install -v github.com/RedTeamPentesting/pretender@latest
 echo "=========="
 echo
 
+mkdir ~/Tools
+cd ~/Tools
+git clone https://github.com/blechschmidt/massdns.git ~/Tools/massdns
+cd ~/Tools/massdns/
+make
+sudo ln -s bin/massdns /usr/local/bin/massdns
 
-# Install rustup
-# echo "[+] Installing rustup"
-# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-# echo
+# Install PD tools
+pdtm -ia
 
 # Installing pipx tools
 echo "${GREEN}[+] Installing some tools from pipx${NC}"
@@ -84,3 +95,5 @@ echo
 
 sudo chown -R $USER:$USER /opt
 echo -e "${green}Install complete.${NC}"
+
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
