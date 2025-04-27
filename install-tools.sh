@@ -56,7 +56,7 @@ cd ~/Tools
 git clone https://github.com/blechschmidt/massdns.git ~/Tools/massdns
 cd ~/Tools/massdns/
 make
-sudo ln -s bin/massdns /usr/local/bin/massdns
+sudo ln -s $(pwd)/bin/massdns /usr/local/bin/massdns
 
 
 # Installing pipx tools
@@ -91,7 +91,6 @@ cp zsh_shortcuts $HOME/.bash_shortcuts
 cp tmux $HOME/.tmux.conf
 echo
 
-sudo chown -R $USER:$USER /opt
 echo -e "${green}Install complete.${NC}"
 
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
