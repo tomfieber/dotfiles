@@ -32,7 +32,10 @@ sudo systemctl enable --now snapd
 # Install from snap
 sudo snap install go --classic
 sudo snap install rustup --classic
+sudo snap install nmap
+sudo snap install metasploit-framework --classic
 rustup default stable
+msfdb init
 
 
 # Install Go tools
