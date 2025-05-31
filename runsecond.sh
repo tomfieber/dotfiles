@@ -11,5 +11,3 @@ asdf install nodejs latest
 npm install -g pp-finder
 
 pdtm -ia
-
-cp zshrc ~/.zshrc

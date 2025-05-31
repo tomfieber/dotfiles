@@ -327,7 +327,7 @@ curl https://sliver.sh/install|sudo bash
 
 
 # Install pyenv
-echo "[+] Installing pyenv"
+log_info "Installing pyenv"
 if [ ! -d $HOME/.pyenv ]; then
     curl https://pyenv.run | bash
 fi
@@ -336,7 +336,7 @@ echo -n "=========="
 echo
 
 # Install rule lists
-echo "[+] Installing word and rule lists"
+log_info "Installing rule lists"
 wget https://raw.githubusercontent.com/stealthsploit/OneRuleToRuleThemStill/refs/heads/main/OneRuleToRuleThemStill.rule -O /opt/rules/OneRuleToRuleThemStill.rule
 
 # SecLists
@@ -357,6 +357,5 @@ cp zsh_shortcuts $HOME/.bash_shortcuts
 cp tmux $HOME/.tmux.conf
 echo
 
-echo -e "${GREEN}Install complete.${NC}"
 log_info "Installation completed"
 echo "Log file available at: $LOG_FILE"
