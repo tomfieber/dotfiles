@@ -103,6 +103,26 @@ install_pipx() {
     fi
 }
 
+install_rust() {
+    local package=$1
+    log_info "Installing $package via cargo install"
+    if ! cargo install $package 2>>$LOG_FILE; then
+        log_error "Failed to install $package"
+        echo -e "${RED}Failed to install $package${NC}"
+        return 1
+    fi
+}
+
+install_gem() {
+    local package=$1
+    log_info "Installing $package via gem"
+    if ! sudo gem install $package 2>>$LOG_FILE; then
+        log_error "Failed to install $package"
+        echo -e "${RED}Failed to install $package${NC}"
+        return 1
+    fi
+}
+
 # Install snap packages
 install_snap go --classic
 install_snap rustup --classic
@@ -145,49 +165,46 @@ if ! curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash 2>>$LOG_FILE; then
 fi
 
 # Install BloodHound Community Edition
+log_info "Installing BloodHound Community Edition"
 wget https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-linux-arm64.tar.gz
 tar -xvzf bloodhound-cli-linux-amd64.tar.gz
 ./bloodhound-cli install
 
 # Install Rust tools
+log_info "Installing Rust tools"
 source $HOME/.cargo/env
 
 # Install Rust tools
-cargo install feroxbuster 
-cargo install rustscan    
+install_rust feroxbuster 
+install_rust rustscan    
 
 # Install evil-winrm
-sudo gem install evil-winrm 
+install_gem evil-winrm 
 
 # Install XSpear
-sudo gem install XSpear
+install_gem XSpear
 
 # Install krbrelayx 
+log_info "Installing krbrelayx"
 git clone https://github.com/dirkjanm/krbrelayx.git /opt/tools/krbrelayx
 sudo ln -s /opt/tools/krbrelayx/krbrelayx.py /usr/local/bin/krbrelayx.py
 sudo ln -s /opt/tools/krbrelayx/addspn.py /usr/local/bin/addspn.py
 sudo ln -s /opt/tools/krbrelayx/printerbug.py /usr/local/bin/printerbug.py
 sudo ln -s /opt/tools/krbrelayx/dnstool.py /usr/local/bin/dnstool.py
 
-# Install ldaprelayscan
-git clone https://github.com/zyn3rgy/LdapRelayScan.git /opt/tools/ldaprelayscan
-
-# Install ligolo-ng
+# Drop a bunch of tools to /opt/tools
+log_info "Cloning various tools into /opt/tools"
+git clone https://github.com/openwall/john.git /opt/tools/john
+cd /opt/tools/john/src
+./configure && make -j$(nproc)
+sudo make install
+git clone https://github.com/micahvandeusen/gMSADumper.git /opt/tools/gMSADumper
 git clone https://github.com/nicocha30/ligolo-ng/releases/download/v0.8.2/ligolo-ng_proxy_0.8.2_linux_arm64.tar.gz /opt/tools/ligolo-ng
 cd /opt/tools/ligolo-ng
 tar -xvzf ligolo-ng_proxy_0.8.2_linux_arm64.tar.gz -C /opt/tools/ligolo-ng
 rm -rf ligolo-ng_proxy_0.8.2_linux_arm64.tar.gz
 sudo ln -s /opt/tools/ligolo-ng/ligolo-ng_proxy /usr/local/bin/ligolo-ng
-
-# gMSADumper
-git clone https://github.com/micahvandeusen/gMSADumper.git /opt/tools/gMSADumper
-git clone https://github.com/openwall/john.git /opt/tools/john
-cd /opt/tools/john/src
-./configure && make -j$(nproc)
-sudo make install
-
-# Drop a bunch of tools to /opt/tools
-log_info "Cloning various tools into /opt/tools"
+git clone https://github.com/zyn3rgy/LdapRelayScan.git /opt/tools/ldaprelayscan
 git clone https://github.com/bats3c/darkarmour.git /opt/tools/DarkAmour 
 git clone https://github.com/m0rtem/CloudFail.git /opt/tools/CloudFail
 git clone https://github.com/Ridter/noPac.git /opt/tools/noPac
@@ -216,7 +233,11 @@ sudo ln -s /opt/tools/testssl.sh/testssl.sh /usr/local/bin/testssl.sh
 git clone https://github.com/frohoff/ysoserial.git /opt/tools/ysoserial
 git clone https://github.com/SecuraBV/CVE-2020-1472.git /opt/tools/CVE-2020-1472-ZeroLogon
 git clone https://github.com/s0md3v/Photon.git /opt/tools/Photon
-git clone https://github.com/synacktiv/php_filter_chain_generator.git /opt/tools/php_filter_chain_generator 
+git clone https://github.com/synacktiv/php_filter_chain_generator.git /opt/tools/php_filter_chain_generator
+git clone https://github.com/blechschmidt/massdns.git /opt/tools/massdns
+cd /opt/tools/massdns/
+make
+sudo ln -s /opt/tools/massdns/bin/massdns /usr/local/bin/massdns
 
 
 # Install Go tools
@@ -241,14 +262,6 @@ install_go github.com/tomnomnom/waybackurls@latest
 
 # Fix gau
 mv $HOME/go/bin/gau $HOME/go/bin/gau-cli 
-
-# Install massdns
-mkdir ~/Tools
-cd ~/Tools
-git clone https://github.com/blechschmidt/massdns.git /opt/tools/massdns
-cd /opt/tools/massdns/
-make
-sudo ln -s /opt/tools/massdns/bin/massdns /usr/local/bin/massdns
 
 # Installing pipx tools
 install_pipx git+https://github.com/ly4k/Certipy.git
@@ -311,14 +324,15 @@ install_pipx git+https://github.com/garrettfoster13/pre2k.git
 
 # Install sliver 
 curl https://sliver.sh/install|sudo bash
-echo "========="
-echo 
+
 
 # Install pyenv
 echo "[+] Installing pyenv"
 if [ ! -d $HOME/.pyenv ]; then
     curl https://pyenv.run | bash
 fi
+
+echo -n "=========="
 echo
 
 # Install rule lists
@@ -336,7 +350,8 @@ rm -rf OneListForAll.tar.gz
 
 
 # Add zsh_shortcuts and zsh_aliases
-echo "[+] Installing dotfiles"
+log_info "Adding zsh shortcuts and aliases"
+cp zshrc $HOME/.zshrc
 cp zsh_aliases $HOME/.bash_aliases
 cp zsh_shortcuts $HOME/.bash_shortcuts
 cp tmux $HOME/.tmux.conf
