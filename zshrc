@@ -72,11 +72,29 @@ ZSH_THEME="th0m12"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git python zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(git asdf direnv fzf python zsh-autosuggestions zsh-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
+
+# asdf completions
+# append completions to fpath
+fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+# initialise completions with ZSH's compinit
+autoload -Uz compinit && compinit
+
+# Common settings regardless of interactive status
+# asdf
+export PATH="$PATH:${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
+
+# zsh history config
+export HISTFILESIZE=1000000000
+export HISTSIZE=1000000000
+export HISTTIMEFORMAT="[%F %T] "
+setopt INC_APPEND_HISTORY
+setopt EXTENDED_HISTORY
+setopt HIST_FIND_NO_DUPS
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
@@ -112,9 +130,23 @@ if [ -f $HOME/.zsh_shortcuts ]; then
   . $HOME/.zsh_shortcuts
 fi
 
-# Virtualenvs
-export WORKON_HOME=$HOME/.local/virtualenvs
-source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
+# Load the pdtm plugin
+if [ -f $HOME/.pdtm/pdtm.zsh ]; then
+  . $HOME/.pdtm/pdtm.zsh
+fi
+
+# Load the cargo environment
+if [ -f $HOME/.cargo/env ]; then
+  . $HOME/.cargo/env
+fi
+
+# Load the pyenv environment
+if [ -d $HOME/.pyenv ]; then
+  export PYENV_ROOT="$HOME/.pyenv"
+  command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+fi
 
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"

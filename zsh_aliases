@@ -1,2 +1,3 @@
 alias ll='ls -la --group-directories-first --color=auto'
 alias ls='ls --group-directories-first --color=auto'
+alias fzf-wordlists='find /opt/lists /usr/share/wfuzz /usr/share/dirb -type f | fzf'
