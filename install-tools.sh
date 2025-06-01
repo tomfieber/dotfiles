@@ -412,6 +412,23 @@ cd /opt/lists
 tar -xvzf OneListForAll.tar.gz
 rm -rf OneListForAll.tar.gz
 
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Copy files
+if $SHELL == "zsh"; then
+    log_info "Copying zsh configuration files"
+    cp -r "$SCRIPT_DIR/zshrc" ~/.zshrc
+    cp -r "$SCRIPT_DIR/zsh_shortcuts" ~/.zsh_shortcuts
+    cp -r "$SCRIPT_DIR/zsh_aliases" ~/.zsh_aliases
+    cp -r "$SCRIPT_DIR/th0m12.zsh-theme" ~/.oh-my-zsh/themes/th0m12.zsh-theme
+    cp -r "$SCRIPT_DIR/tmux.conf" ~/.tmux.conf
+else
+    log_info "Copying bash configuration files"
+    cp -r zsh_shortcuts ~/.bash_shortcuts
+    cp -r zsh_aliases ~/.bash_aliases 
+fi
+
+cp -r tmux.conf ~/.tmux.conf
 
 log_info "Installation completed"
 echo "Log file available at: $LOG_FILE"
