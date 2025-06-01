@@ -1,7 +1,7 @@
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
-export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.cargo/env:$HOME/.cargo/bin:/snap/bin:$PATH
+export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.cargo/env:$HOME/.cargo/bin:/usr/local/go/bin:/snap/bin:$PATH
 
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
