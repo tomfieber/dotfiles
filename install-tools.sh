@@ -147,13 +147,13 @@ git_clone_tool() {
     fi
 }
 
-# Update and upgrade system
-log_info "Updating and upgrading system"
-if ! sudo apt update && sudo apt full-upgrade -y 2>>$LOG_FILE; then
-    log_error "Failed to update and upgrade system"
-    echo -e "${RED}Failed to update and upgrade system${NC}"
-    exit 1
-fi
+# # Update and upgrade system
+# log_info "Updating and upgrading system"
+# if ! sudo apt update && sudo apt full-upgrade -y 2>>$LOG_FILE; then
+#     log_error "Failed to update and upgrade system"
+#     echo -e "${RED}Failed to update and upgrade system${NC}"
+#     exit 1
+# fi
 
 
 # # Install snap packages
@@ -360,11 +360,11 @@ install_pipx git+https://github.com/garrettfoster13/pre2k.git
 curl https://sliver.sh/install|sudo bash
 
 
-# Install pyenv
-log_info "Installing pyenv"
-if [ ! -d $HOME/.pyenv ]; then
-    curl https://pyenv.run | bash
-fi
+# # Install pyenv
+# log_info "Installing pyenv"
+# if [ ! -d $HOME/.pyenv ]; then
+#     curl https://pyenv.run | bash
+# fi
 
 echo -n "=========="
 echo
@@ -398,7 +398,25 @@ else
     cp -r zsh_aliases ~/.bash_aliases 
 fi
 
-cp -r tmux.conf ~/.tmux.conf
+# Install zsh plugins
+if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
+    log_info "Installing zsh-autosuggestions plugin"
+    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+else
+    log_info "zsh-autosuggestions plugin already installed"
+fi
+if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]; then
+    log_info "Installing zsh-syntax-highlighting plugin"
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+else
+    log_info "zsh-syntax-highlighting plugin already installed"
+fi
+
+asdf plugin add nodejs
+asdf install nodejs latest
+npm install -g pp-finder
+
+pdtm -ia
 
 log_info "Installation completed"
 echo "Log file available at: $LOG_FILE"
