@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install required packages
-xargs sudo apt-get install -y < requirements.txt 
+xargs -a requirements.txt sudo apt-get install -y
 
 mkdir -p ~/.local/logging 
 

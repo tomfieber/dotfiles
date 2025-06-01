@@ -201,7 +201,7 @@ if ! wget -q https://github.com/PowerShell/PowerShell/releases/download/v7.4.10/
     log_error "Failed to download PowerShell"
     echo -e "${RED}Failed to download PowerShell${NC}"
 fi
-if ! tar -xzf /opt/tools/powershell.tar.gz -C /opt/tools/ 2>>$LOG_FILE; then
+if ! tar -xzf /opt/tools/powershell.tar.gz -C /opt/tools/powershell 2>>$LOG_FILE; then
     log_error "Failed to extract PowerShell"
     echo -e "${RED}Failed to extract PowerShell${NC}"
 fi
