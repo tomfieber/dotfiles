@@ -83,7 +83,7 @@ install_pipx() {
     show_progress "Installing" "$package via pipx"
     log_info "Installing $package via pipx"
     
-    if ! sudo pipx install --global $package 2>>$LOG_FILE; then
+    if ! pipx install $package 2>>$LOG_FILE; then
         log_error "Failed to install $package"
         echo -e "${RED}[✗] Failed to install $package${NC}"
         return 1
@@ -144,6 +144,48 @@ git_clone_tool() {
     fi
 }
 
+# Update and upgrade system
+log_info "Updating and upgrading system"
+if ! sudo apt update && sudo apt full-upgrade -y 2>>$LOG_FILE; then
+    log_error "Failed to update and upgrade system"
+    echo -e "${RED}Failed to update and upgrade system${NC}"
+    exit 1
+fi
+# Install required packages
+REQUIRED_PACKAGES=(
+    forensics-all wfuzz tesseract-ocr ipcalc antiword docker.io docker-compose
+    python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
+    prips libkrb5-dev dirb mingw-w64-tools mingw-w64-common g++-mingw-w64
+    gcc-mingw-w64 upx-ucl osslsigncode git direnv fzf pipx zsh cewl snapd make
+    libpcap-dev python3-netifaces python-dev-is-python3 build-essential
+    libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev
+    xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv
+    python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
+)
+for package in "${REQUIRED_PACKAGES[@]}"; do
+    show_progress "Installing" "$package"
+    log_info "Installing $package"
+    
+    if ! sudo apt install -y "$package" 2>>$LOG_FILE; then
+        log_error "Failed to install $package"
+        echo -e "${RED}[✗] Failed to install $package${NC}"
+    else
+        show_success "$package"
+    fi
+done
+# Create necessary directories
+sudo mkdir -p /opt/{tools/powershell,lists,rules}
+
+# Set permissions for /opt
+sudo chown -R $USER:$USER /opt
+
+# Copy configuration files
+sudo cp -r opt/* /opt/
+
+# Add user to docker and sudo groups
+sudo usermod -aG docker $USER
+sudo usermod -aG sudo $USER
+
 # Install snap packages
 install_snap go --classic
 install_snap rustup --classic
@@ -197,7 +239,7 @@ fi
 # Install BloodHound Community Edition
 log_info "Installing BloodHound Community Edition"
 wget https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-linux-arm64.tar.gz
-tar -xvzf bloodhound-cli-linux-amd64.tar.gz
+tar -xvzf bloodhound-cli-linux-arm64.tar.gz
 ./bloodhound-cli install
 
 # Install Rust tools
@@ -229,11 +271,6 @@ cd /opt/tools/john/src
 ./configure && make -j$(nproc)
 sudo make install
 git_clone_tool https://github.com/micahvandeusen/gMSADumper.git /opt/tools/gMSADumper
-git_clone_tool https://github.com/nicocha30/ligolo-ng/releases/download/v0.8.2/ligolo-ng_proxy_0.8.2_linux_arm64.tar.gz /opt/tools/ligolo-ng
-cd /opt/tools/ligolo-ng
-tar -xvzf ligolo-ng_proxy_0.8.2_linux_arm64.tar.gz -C /opt/tools/ligolo-ng
-rm -rf ligolo-ng_proxy_0.8.2_linux_arm64.tar.gz
-sudo ln -s /opt/tools/ligolo-ng/ligolo-ng_proxy /usr/local/bin/ligolo-ng
 git_clone_tool https://github.com/zyn3rgy/LdapRelayScan.git /opt/tools/ldaprelayscan
 git_clone_tool https://github.com/bats3c/darkarmour.git /opt/tools/DarkAmour 
 git_clone_tool https://github.com/m0rtem/CloudFail.git /opt/tools/CloudFail
@@ -251,15 +288,13 @@ git_clone_tool https://github.com/GoSecure/pywsus.git /opt/tools/pywsus
 git_clone_tool https://github.com/lanmaster53/recon-ng.git /opt/tools/recon-ng
 git_clone_tool https://github.com/s0md3v/ReconDog.git /opt/tools/ReconDog
 git_clone_tool https://github.com/lgandx/Responder.git /opt/tools/Responder
-sudo ln -s /opt/tools/Responder/responder.py /usr/local/bin/responder.py
 git_clone_tool https://github.com/xpn/sccmwtf.git /opt/tools/sccmwtf
 git_clone_tool https://github.com/synacktiv/SCCMSecrets.git /opt/tools/SCCMSecrets
 git_clone_tool https://github.com/pentestmonkey/smtp-user-enum.git /opt/tools/smtp-user-enum
 git_clone_tool https://github.com/defparam/smuggler.git /opt/tools/smuggler
 git_clone_tool https://github.com/smicallef/spiderfoot.git /opt/tools/spiderfoot
 git_clone_tool https://github.com/swisskyrepo/SSRFmap.git /opt/tools/SSRFmap
-git_clone_tool --depth 1 https://github.com/testssl/testssl.sh.git /opt/tools/testssl.sh
-sudo ln -s /opt/tools/testssl.sh/testssl.sh /usr/local/bin/testssl.sh
+git_clone_tool https://github.com/testssl/testssl.sh.git /opt/tools/testssl.sh
 git_clone_tool https://github.com/frohoff/ysoserial.git /opt/tools/ysoserial
 git_clone_tool https://github.com/SecuraBV/CVE-2020-1472.git /opt/tools/CVE-2020-1472-ZeroLogon
 git_clone_tool https://github.com/s0md3v/Photon.git /opt/tools/Photon
@@ -300,7 +335,7 @@ install_pipx git+https://github.com/blacklanternsecurity/MANSPIDER
 install_pipx git+https://github.com/Pennyw0rth/NetExec
 install_pipx git+https://github.com/p0dalirius/Coercer.git
 install_pipx git+https://github.com/skelsec/pypykatz.git
-install_pipx git+https://github.com/dirkjanm/mitm6.git
+sudo pipx install --global git+https://github.com/dirkjanm/mitm6.git
 install_pipx git+https://github.com/Mazars-Tech/AD_Miner.git
 install_pipx git+https://github.com/fortra/impacket.git
 install_pipx git+https://github.com/zblurx/certsync.git
