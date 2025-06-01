@@ -1,0 +1,9 @@
+jq
+pipx
+curl
+wget
+git
+python3
+build-essential
+autoconf
+automake

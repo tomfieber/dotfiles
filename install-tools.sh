@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Setup error logging
-LOG_FILE="/tmp/install-tools-$(date +%Y%m%d%H%M%S).log"
+if [ ! -d $HOME/.local/logging ]; then
+    mkdir -p $HOME/.local/logging
+fi
+LOG_FILE="$HOME/.local/logging/install-tools-$(date +%Y%m%d%H%M%S).log"
 exec 3>&1 4>&2
 trap 'exec 2>&4 1>&3' EXIT
 exec 1>>"$LOG_FILE" 2>&1
@@ -83,7 +86,7 @@ install_pipx() {
     show_progress "Installing" "$package via pipx"
     log_info "Installing $package via pipx"
     
-    if ! pipx install $package 2>>$LOG_FILE; then
+    if ! pipx install $package --include-deps 2>>$LOG_FILE; then
         log_error "Failed to install $package"
         echo -e "${RED}[✗] Failed to install $package${NC}"
         return 1
@@ -151,40 +154,7 @@ if ! sudo apt update && sudo apt full-upgrade -y 2>>$LOG_FILE; then
     echo -e "${RED}Failed to update and upgrade system${NC}"
     exit 1
 fi
-# Install required packages
-REQUIRED_PACKAGES=(
-    forensics-all wfuzz tesseract-ocr ipcalc antiword docker.io docker-compose
-    python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
-    prips libkrb5-dev dirb mingw-w64-tools mingw-w64-common g++-mingw-w64
-    gcc-mingw-w64 upx-ucl osslsigncode git direnv fzf pipx zsh cewl snapd make
-    libpcap-dev python3-netifaces python-dev-is-python3 build-essential
-    libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev
-    xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv
-    python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf
-)
-for package in "${REQUIRED_PACKAGES[@]}"; do
-    show_progress "Installing" "$package"
-    log_info "Installing $package"
-    
-    if ! sudo apt install -y "$package" 2>>$LOG_FILE; then
-        log_error "Failed to install $package"
-        echo -e "${RED}[✗] Failed to install $package${NC}"
-    else
-        show_success "$package"
-    fi
-done
-# Create necessary directories
-sudo mkdir -p /opt/{tools/powershell,lists,rules}
 
-# Set permissions for /opt
-sudo chown -R $USER:$USER /opt
-
-# Copy configuration files
-sudo cp -r opt/* /opt/
-
-# Add user to docker and sudo groups
-sudo usermod -aG docker $USER
-sudo usermod -aG sudo $USER
 
 # Install snap packages
 install_snap go --classic
