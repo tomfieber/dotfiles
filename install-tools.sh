@@ -227,12 +227,12 @@ install_gem evil-winrm
 install_gem XSpear
 
 # Install krbrelayx 
-log_info "Installing krbrelayx"
-git clone https://github.com/dirkjanm/krbrelayx.git /opt/tools/krbrelayx
-sudo ln -s /opt/tools/krbrelayx/krbrelayx.py /usr/local/bin/krbrelayx.py
-sudo ln -s /opt/tools/krbrelayx/addspn.py /usr/local/bin/addspn.py
-sudo ln -s /opt/tools/krbrelayx/printerbug.py /usr/local/bin/printerbug.py
-sudo ln -s /opt/tools/krbrelayx/dnstool.py /usr/local/bin/dnstool.py
+# log_info "Installing krbrelayx"
+# git clone https://github.com/dirkjanm/krbrelayx.git /opt/tools/krbrelayx
+# sudo ln -s /opt/tools/krbrelayx/krbrelayx.py /usr/local/bin/krbrelayx.py
+# sudo ln -s /opt/tools/krbrelayx/addspn.py /usr/local/bin/addspn.py
+# sudo ln -s /opt/tools/krbrelayx/printerbug.py /usr/local/bin/printerbug.py
+# sudo ln -s /opt/tools/krbrelayx/dnstool.py /usr/local/bin/dnstool.py
 
 # Drop a bunch of tools to /opt/tools
 log_info "Cloning various tools into /opt/tools"
@@ -240,6 +240,7 @@ git_clone_tool https://github.com/openwall/john.git /opt/tools/john
 cd /opt/tools/john/src
 ./configure && make -j$(nproc)
 sudo make install
+git_clone_tool https://github.com/dirkjanm/krbrelayx.git /opt/tools/krbrelayx
 git_clone_tool https://github.com/micahvandeusen/gMSADumper.git /opt/tools/gMSADumper
 git_clone_tool https://github.com/zyn3rgy/LdapRelayScan.git /opt/tools/ldaprelayscan
 git_clone_tool https://github.com/bats3c/darkarmour.git /opt/tools/DarkAmour 
@@ -383,15 +384,15 @@ tar -xvzf OneListForAll.tar.gz
 rm -rf OneListForAll.tar.gz
 
 # Get the directory where the script is located
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Copy files
 if $SHELL == "zsh"; then
     log_info "Copying zsh configuration files"
-    cp -r "$SCRIPT_DIR/zshrc" ~/.zshrc
-    cp -r "$SCRIPT_DIR/zsh_shortcuts" ~/.zsh_shortcuts
-    cp -r "$SCRIPT_DIR/zsh_aliases" ~/.zsh_aliases
-    cp -r "$SCRIPT_DIR/th0m12.zsh-theme" ~/.oh-my-zsh/themes/th0m12.zsh-theme
-    cp -r "$SCRIPT_DIR/tmux.conf" ~/.tmux.conf
+    cp -r zshrc ~/.zshrc
+    cp -r zsh_shortcuts ~/.zsh_shortcuts
+    cp -r zsh_aliases ~/.zsh_aliases
+    cp -r th0m12.zsh-theme ~/.oh-my-zsh/themes/th0m12.zsh-theme
+    cp -r tmux.conf ~/.tmux.conf
 else
     log_info "Copying bash configuration files"
     cp -r zsh_shortcuts ~/.bash_shortcuts
