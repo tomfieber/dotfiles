@@ -133,28 +133,76 @@ if ! command -v go &> /dev/null; then
     show_progress "Installing" "Go"
     log_info "Installing Go"
     
-    if $SYSARCH = "x86_64"; then
-        SYSARCH="amd64"
-    elif $SYSARCH = "aarch64"; then
-        SYSARCH="arm64"
+    # Determine system architecture
+    SYSARCH=$(uname -m)
+    if [ "$SYSARCH" = "x86_64" ]; then
+        ARCH="amd64"
+    elif [ "$SYSARCH" = "aarch64" ] || [ "$SYSARCH" = "arm64" ]; then
+        ARCH="arm64"
     else
         log_error "Unsupported architecture: $SYSARCH"
         echo -e "${RED}[✗] Unsupported architecture: $SYSARCH${NC}"
         exit 1
     fi
-    LATEST_GO_VERSION=$(curl -s 'https://go.dev/dl/?mode=json' | jq '.[].version' | head -n 1 | tr -d '"')
-    wget "https://go.dev/dl/$LATEST_GO_VERSION.linux-$SYSARCH.tar.gz" -O /tmp/go.tar.gz 2>>$LOG_FILE
-    if [ $? -ne 0 ]; then
-        log_error "Failed to download Go"
-        echo -e "${RED}[✗] Failed to download Go${NC}"
-    else
-        sudo tar -C /usr/local -xzf /tmp/go.tar.gz 2>>$LOG_FILE
-        export PATH=$PATH:/usr/local/go/bin
-        show_success "Go"
+    
+    # Determine OS type
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    if [ "$OS" != "linux" ] && [ "$OS" != "darwin" ]; then
+        log_error "Unsupported operating system: $OS"
+        echo -e "${RED}[✗] Unsupported operating system: $OS${NC}"
+        exit 1
     fi
-    rm -rf /usr/local/go && tar -C /usr/local -xzf $LATEST_GO_VERSION.linux-$SYSARCH.tar.gz
+    
+    # Get latest Go version
+    LATEST_GO_VERSION=$(curl -s 'https://go.dev/dl/?mode=json' | jq -r '.[0].version')
+    if [ -z "$LATEST_GO_VERSION" ]; then
+        log_error "Failed to determine latest Go version"
+        echo -e "${RED}[✗] Failed to determine latest Go version${NC}"
+        exit 1
+    fi
+    
+    log_info "Downloading Go $LATEST_GO_VERSION for $OS-$ARCH"
+    GO_DOWNLOAD_URL="https://go.dev/dl/$LATEST_GO_VERSION.$OS-$ARCH.tar.gz"
+    GO_TARBALL="/tmp/go-$LATEST_GO_VERSION.tar.gz"
+    
+    # Download Go
+    wget "$GO_DOWNLOAD_URL" -O "$GO_TARBALL" 2>>$LOG_FILE
+    if [ $? -ne 0 ]; then
+        log_error "Failed to download Go from $GO_DOWNLOAD_URL"
+        echo -e "${RED}[✗] Failed to download Go${NC}"
+        exit 1
+    fi
+    
+    # Remove any previous Go installation and install the new one
+    sudo rm -rf /usr/local/go
+    sudo tar -C /usr/local -xzf "$GO_TARBALL" 2>>$LOG_FILE
+    if [ $? -ne 0 ]; then
+        log_error "Failed to extract Go"
+        echo -e "${RED}[✗] Failed to extract Go${NC}"
+        exit 1
+    fi
+    
+    # Add Go to PATH if not already there
+    if [[ ":$PATH:" != *":/usr/local/go/bin:"* ]]; then
+        echo 'export PATH=$PATH:/usr/local/go/bin' >> "$HOME/.profile"
+        export PATH=$PATH:/usr/local/go/bin
+    fi
+    
+    # Clean up
+    rm -f "$GO_TARBALL"
+    
+    # Verify installation
+    if command -v go &> /dev/null; then
+        GO_VERSION=$(go version)
+        log_info "Go installed successfully: $GO_VERSION"
+        show_success "Go ($GO_VERSION)"
+    else
+        log_error "Go installation failed"
+        echo -e "${RED}[✗] Go installation failed${NC}"
+        exit 1
+    fi
 else
-    log_info "Go is already installed"
+    log_info "Go is already installed: $(go version)"
 fi
 
 # Install oh-my-zsh if not already installed

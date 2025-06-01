@@ -156,10 +156,10 @@ if ! sudo apt update && sudo apt full-upgrade -y 2>>$LOG_FILE; then
 fi
 
 
-# Install snap packages
-install_snap go --classic
-install_snap rustup --classic
-install_snap metasploit-framework --classic
+# # Install snap packages
+# install_snap go --classic
+# install_snap rustup --classic
+# install_snap metasploit-framework --classic
 
 if ! rustup default stable 2>>$LOG_FILE; then
     log_error "Failed to set rustup default to stable"
