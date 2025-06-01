@@ -50,7 +50,7 @@ show_success() {
 
 # Install required packages
 REQUIRED_PACKAGES=(
-    wfuzz tesseract-ocr ipcalc antiword docker.io docker-compose
+    python3-pkg-resources wfuzz tesseract-ocr ipcalc antiword docker.io docker-compose
     python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
     prips libkrb5-dev dirb mingw-w64-tools mingw-w64-common g++-mingw-w64
     gcc-mingw-w64 upx-ucl osslsigncode git direnv fzf pipx zsh cewl snapd make
