@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Setup error logging
-if [ ! -d $HOME/.local/logging ]; then
-    mkdir -p $HOME/.local/logging
+if [ ! -d "$HOME/.local/logging" ]; then
+    mkdir -p "$HOME/.local/logging"
 fi
 LOG_FILE="$HOME/.local/logging/install-tools-$(date +%Y%m%d%H%M%S).log"
 exec 3>&1 4>&2
@@ -33,6 +33,31 @@ handle_error() {
 # Set trap for error handling
 trap 'handle_error $LINENO' ERR
 
+# Determine system architecture
+SYSARCH=$(uname -m)
+log_info "Detected system architecture: $SYSARCH"
+
+# Create necessary directories
+if [ ! -d /opt/tools ]; then
+    sudo mkdir -p /opt/tools
+    sudo chmod 755 /opt/tools
+fi
+
+if [ ! -d /opt/rules ]; then
+    sudo mkdir -p /opt/rules
+    sudo chmod 755 /opt/rules
+fi
+
+if [ ! -d /opt/lists ]; then
+    sudo mkdir -p /opt/lists
+    sudo chmod 755 /opt/lists
+fi
+
+if [ ! -d /opt/tools/powershell ]; then
+    sudo mkdir -p /opt/tools/powershell
+    sudo chmod 755 /opt/tools/powershell
+fi
+
 # Progress indicator function
 show_progress() {
     local action="$1"
@@ -48,13 +73,13 @@ show_success() {
 
 # Install from snap with error handling and progress indicator
 install_snap() {
-    local package=$1
-    local options=$2
+    local package="$1"
+    local options="$2"
     
     show_progress "Installing" "$package via snap"
     log_info "Installing $package via snap"
     
-    if ! sudo snap install $package $options 2>>$LOG_FILE; then
+    if ! sudo snap install "$package" $options 2>>$LOG_FILE; then
         log_error "Failed to install $package"
         echo -e "${RED}[✗] Failed to install $package${NC}"
         return 1
@@ -65,12 +90,12 @@ install_snap() {
 }
 
 install_go() {
-    local package=$1
+    local package="$1"
     
     show_progress "Installing" "$package via go"
     log_info "Installing $package via go install"
     
-    if ! go install $package 2>>$LOG_FILE; then
+    if ! go install "$package" 2>>$LOG_FILE; then
         log_error "Failed to install $package"
         echo -e "${RED}[✗] Failed to install $package${NC}"
         return 1
@@ -174,36 +199,45 @@ fi
 # Install AWS CLI with error handling
 log_info "Installing AWS CLI"
 if [ "$SYSARCH" == "x86_64" ]; then
-    if ! curl -O 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
+    if ! curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
         log_error "Failed to download AWS CLI for x86_64"
         echo -e "${RED}Failed to download AWS CLI${NC}"
     fi
-fi
-if [ "$SYSARCH" == "aarch64" ]; then
-    if ! curl -O 'https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
+elif [ "$SYSARCH" == "aarch64" ]; then
+    if ! curl 'https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
         log_error "Failed to download AWS CLI for aarch64"
         echo -e "${RED}Failed to download AWS CLI${NC}"
     fi
+else
+    log_error "Unsupported architecture for AWS CLI: $SYSARCH"
+    echo -e "${RED}Unsupported architecture for AWS CLI: $SYSARCH${NC}"
 fi
-unzip awscliv2.zip
-sudo ./aws/install
+
+# Only continue with AWS CLI install if the zip was downloaded
+if [ -f awscliv2.zip ]; then
+    unzip -o awscliv2.zip
+    sudo ./aws/install
+    rm -f awscliv2.zip
+fi
+
+# Install powershell (fix path issue)
+log_info "Installing PowerShell"
+if ! sudo wget -q https://github.com/PowerShell/PowerShell/releases/download/v7.4.10/powershell-7.4.10-linux-arm64.tar.gz -O /opt/tools/powershell.tar.gz 2>>$LOG_FILE; then
+    log_error "Failed to download PowerShell"
+    echo -e "${RED}Failed to download PowerShell${NC}"
+fi
+if [ -f /opt/tools/powershell.tar.gz ]; then
+    if ! sudo tar -xzf /opt/tools/powershell.tar.gz -C /opt/tools/powershell 2>>$LOG_FILE; then
+        log_error "Failed to extract PowerShell"
+        echo -e "${RED}Failed to extract PowerShell${NC}"
+    fi
+fi
 
 # Install Azure CLI
 log_info "Installing Azure CLI"
 if ! curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash 2>>$LOG_FILE; then
     log_error "Failed to install Azure CLI"
     echo -e "${RED}Failed to install Azure CLI${NC}"
-fi
-
-# Install powershell
-log_info "Installing PowerShell"
-if ! wget -q https://github.com/PowerShell/PowerShell/releases/download/v7.4.10/powershell-7.4.10-linux-arm64.tar.gz -O /opt/tools/powershell.tar.gz 2>>$LOG_FILE; then
-    log_error "Failed to download PowerShell"
-    echo -e "${RED}Failed to download PowerShell${NC}"
-fi
-if ! tar -xzf /opt/tools/powershell.tar.gz -C /opt/tools/powershell 2>>$LOG_FILE; then
-    log_error "Failed to extract PowerShell"
-    echo -e "${RED}Failed to extract PowerShell${NC}"
 fi
 
 # Install BloodHound Community Edition
@@ -385,8 +419,8 @@ rm -rf OneListForAll.tar.gz
 
 # Get the directory where the script is located
 
-# Copy files
-if $SHELL == "zsh"; then
+# Fix shell comparison
+if [ "$SHELL" = "$(which zsh)" ]; then
     log_info "Copying zsh configuration files"
     cp -r zshrc ~/.zshrc
     cp -r zsh_shortcuts ~/.zsh_shortcuts
