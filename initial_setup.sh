@@ -205,6 +205,8 @@ else
     log_info "Go is already installed: $(go version)"
 fi
 
+install_go github.com/asdf-vm/asdf/cmd/asdf@latest
+
 # Install oh-my-zsh if not already installed
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     show_progress "Installing" "Oh My Zsh"

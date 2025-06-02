@@ -235,7 +235,7 @@ fi
 
 # Install Azure CLI
 log_info "Installing Azure CLI"
-if ! curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash 2>>$LOG_FILE; then
+if ! curl -sL https://aka.ms/InstallAzureCLIDeb | sudo DIST_CODE=bookworm bash 2>>$LOG_FILE; then
     log_error "Failed to install Azure CLI"
     echo -e "${RED}Failed to install Azure CLI${NC}"
 fi
