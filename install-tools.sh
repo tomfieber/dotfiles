@@ -334,6 +334,7 @@ install_go github.com/tomnomnom/waybackurls@latest
 mv $HOME/go/bin/gau $HOME/go/bin/gau-cli 
 
 # Installing pipx tools
+install_pipx git+https://github.com/fortra/impacket.git
 install_pipx git+https://github.com/ly4k/Certipy.git
 install_pipx git+https://github.com/dirkjanm/BloodHound.py.git
 install_pipx git+https://github.com/blacklanternsecurity/MANSPIDER
@@ -342,7 +343,6 @@ install_pipx git+https://github.com/p0dalirius/Coercer.git
 install_pipx git+https://github.com/skelsec/pypykatz.git
 sudo pipx install --global git+https://github.com/dirkjanm/mitm6.git
 install_pipx git+https://github.com/Mazars-Tech/AD_Miner.git
-install_pipx git+https://github.com/fortra/impacket.git
 install_pipx git+https://github.com/zblurx/certsync.git
 install_pipx git+https://github.com/ImpostorKeanu/parsuite.git
 install_pipx git+https://github.com/AetherBlack/abuseACL.git
