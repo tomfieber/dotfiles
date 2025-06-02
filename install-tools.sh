@@ -394,6 +394,8 @@ install_pipx git+https://github.com/garrettfoster13/pre2k.git
 # Install sliver 
 curl https://sliver.sh/install|sudo bash
 
+# Enable tiocsti
+echo "dev.tty.legacy_tiocsti=1" | sudo tee -a /etc/sysctl.conf
 
 # # Install pyenv
 # log_info "Installing pyenv"
