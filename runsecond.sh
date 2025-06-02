@@ -2,6 +2,7 @@
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 # Fix shell comparison
+cp -r $SCRIPT_DIR/cheats $HOME/.cheats
 if [ "$SHELL" = "$(which zsh)" ]; then
     log_info "Copying zsh configuration files"
     cp -r $SCRIPT_DIR/zshrc $HOME/.zshrc
