@@ -89,7 +89,7 @@ sudo usermod -aG sudo $USER
 
 chown -R thomas:thomas /opt
 
-cp -r opt/* /opt/ 
+#cp -r opt/* /opt/ 
 
 # Install rustup and set up Rust
 if ! command -v rustup &> /dev/null; then
