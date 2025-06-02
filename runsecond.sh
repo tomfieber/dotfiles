@@ -41,6 +41,7 @@ copy_file() {
 # Copy cheats directory
 log_info "Copying cheats to home directory"
 copy_file "$SCRIPT_DIR/cheats" "$HOME/.cheats" "cheats directory"
+copy_file "$SCRIPT_DIR/opt/*" "/opt/" "opt files"
 
 if [ "$SHELL" = "$(which zsh)" ]; then
     log_info "Detected ZSH shell, copying zsh configuration files"
