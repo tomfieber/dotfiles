@@ -111,7 +111,7 @@ install_pipx() {
     show_progress "Installing" "$package via pipx"
     log_info "Installing $package via pipx"
     
-    if ! pipx install $package --include-deps 2>>$LOG_FILE; then
+    if ! pipx install $package 2>>$LOG_FILE; then
         log_error "Failed to install $package"
         echo -e "${RED}[✗] Failed to install $package${NC}"
         return 1
@@ -419,19 +419,20 @@ rm -rf OneListForAll.tar.gz
 
 # Get the directory where the script is located
 
-# Fix shell comparison
-if [ "$SHELL" = "$(which zsh)" ]; then
-    log_info "Copying zsh configuration files"
-    cp -r zshrc ~/.zshrc
-    cp -r zsh_shortcuts ~/.zsh_shortcuts
-    cp -r zsh_aliases ~/.zsh_aliases
-    cp -r th0m12.zsh-theme ~/.oh-my-zsh/themes/th0m12.zsh-theme
-    cp -r tmux.conf ~/.tmux.conf
-else
-    log_info "Copying bash configuration files"
-    cp -r zsh_shortcuts ~/.bash_shortcuts
-    cp -r zsh_aliases ~/.bash_aliases 
-fi
+# SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+# # Fix shell comparison
+# if [ "$SHELL" = "$(which zsh)" ]; then
+#     log_info "Copying zsh configuration files"
+#     cp -r $SCRIPT_DIR/zshrc $HOME/.zshrc
+#     cp -r $SCRIPT_DIR/zsh_shortcuts $HOME/.zsh_shortcuts
+#     cp -r $SCRIPT_DIR/zsh_aliases $HOME/.zsh_aliases
+#     cp -r $SCRIPT_DIR/th0m12.zsh-theme $HOME/.oh-my-zsh/themes/th0m12.zsh-theme
+#     cp -r $SCRIPT_DIR/tmux.conf $HOME/.tmux.conf
+# else
+#     log_info "Copying bash configuration files"
+#     cp -r $SCRIPT_DIR/zsh_shortcuts $HOME/.bash_shortcuts
+#     cp -r $SCRIPT_DIR/zsh_aliases $HOME/.bash_aliases 
+# fi
 
 # Install zsh plugins
 if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
