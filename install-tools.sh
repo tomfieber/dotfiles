@@ -329,6 +329,7 @@ install_go github.com/ipinfo/cli/ipinfo@latest
 install_go github.com/BishopFox/jsluice/cmd/jsluice@latest
 curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
 install_go github.com/tomnomnom/waybackurls@latest
+install_go github.com/projectdiscovery/chaos-client/cmd/chaos@latest
 
 # Fix gau
 mv $HOME/go/bin/gau $HOME/go/bin/gau-cli 
