@@ -207,6 +207,9 @@ fi
 
 install_go github.com/asdf-vm/asdf/cmd/asdf@latest
 
+# Make arsenal work
+echo 'dev.tty.legacy_tiocsti = 1' | sudo tee /etc/sysctl.d/legacy_tiocsti.conf > /dev/null
+
 # Install oh-my-zsh if not already installed
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     show_progress "Installing" "Oh My Zsh"
