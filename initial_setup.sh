@@ -49,27 +49,27 @@ show_success() {
 }
 
 # Install required packages
-REQUIRED_PACKAGES=(
-    awscli python3-azure-cli python3-pkg-resources wfuzz tesseract-ocr ipcalc antiword docker.io docker-compose
-    python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
-    prips libkrb5-dev dirb mingw-w64-tools mingw-w64-common g++-mingw-w64
-    gcc-mingw-w64 upx-ucl osslsigncode git direnv fzf pipx zsh cewl snapd make
-    libpcap-dev python3-netifaces python-dev-is-python3 build-essential
-    libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev
-    xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv
-    python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf python3-aioquic 
-)
-for package in "${REQUIRED_PACKAGES[@]}"; do
-    show_progress "Installing" "$package"
-    log_info "Installing $package"
+# REQUIRED_PACKAGES=(
+#     awscli python3-azure-cli python3-pkg-resources wfuzz tesseract-ocr ipcalc antiword docker.io docker-compose
+#     python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
+#     prips libkrb5-dev dirb mingw-w64-tools mingw-w64-common g++-mingw-w64
+#     gcc-mingw-w64 upx-ucl osslsigncode git direnv fzf pipx zsh cewl snapd make
+#     libpcap-dev python3-netifaces python-dev-is-python3 build-essential
+#     libbz2-dev libreadline-dev libsqlite3-dev curl zlib1g-dev libncursesw5-dev
+#     xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev direnv
+#     python3-quamash python3-pyfiglet python3-pandas python3-shodan patchelf python3-aioquic 
+# )
+# for package in "${REQUIRED_PACKAGES[@]}"; do
+#     show_progress "Installing" "$package"
+#     log_info "Installing $package"
     
-    if ! sudo apt install -y "$package" 2>>$LOG_FILE; then
-        log_error "Failed to install $package"
-        echo -e "${RED}[✗] Failed to install $package${NC}"
-    else
-        show_success "$package"
-    fi
-done
+#     if ! sudo apt install -y "$package" 2>>$LOG_FILE; then
+#         log_error "Failed to install $package"
+#         echo -e "${RED}[✗] Failed to install $package${NC}"
+#     else
+#         show_success "$package"
+#     fi
+# done
 # Create necessary directories
 sudo mkdir -p /opt/{tools/powershell,lists,rules}
 
