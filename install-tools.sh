@@ -196,29 +196,29 @@ if ! msfdb init 2>>$LOG_FILE; then
     echo -e "${RED}Failed to initialize msfdb${NC}"
 fi
 
-# Install AWS CLI with error handling
-log_info "Installing AWS CLI"
-if [ "$SYSARCH" == "x86_64" ]; then
-    if ! curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
-        log_error "Failed to download AWS CLI for x86_64"
-        echo -e "${RED}Failed to download AWS CLI${NC}"
-    fi
-elif [ "$SYSARCH" == "aarch64" ]; then
-    if ! curl 'https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
-        log_error "Failed to download AWS CLI for aarch64"
-        echo -e "${RED}Failed to download AWS CLI${NC}"
-    fi
-else
-    log_error "Unsupported architecture for AWS CLI: $SYSARCH"
-    echo -e "${RED}Unsupported architecture for AWS CLI: $SYSARCH${NC}"
-fi
+# # Install AWS CLI with error handling
+# log_info "Installing AWS CLI"
+# if [ "$SYSARCH" == "x86_64" ]; then
+#     if ! curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
+#         log_error "Failed to download AWS CLI for x86_64"
+#         echo -e "${RED}Failed to download AWS CLI${NC}"
+#     fi
+# elif [ "$SYSARCH" == "aarch64" ]; then
+#     if ! curl 'https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
+#         log_error "Failed to download AWS CLI for aarch64"
+#         echo -e "${RED}Failed to download AWS CLI${NC}"
+#     fi
+# else
+#     log_error "Unsupported architecture for AWS CLI: $SYSARCH"
+#     echo -e "${RED}Unsupported architecture for AWS CLI: $SYSARCH${NC}"
+# fi
 
-# Only continue with AWS CLI install if the zip was downloaded
-if [ -f awscliv2.zip ]; then
-    unzip -o awscliv2.zip
-    sudo ./aws/install
-    rm -f awscliv2.zip
-fi
+# # Only continue with AWS CLI install if the zip was downloaded
+# if [ -f awscliv2.zip ]; then
+#     unzip -o awscliv2.zip
+#     sudo ./aws/install
+#     rm -f awscliv2.zip
+# fi
 
 # Install powershell (fix path issue)
 log_info "Installing PowerShell"
