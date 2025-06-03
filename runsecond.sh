@@ -64,7 +64,10 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 log_info "Setting up asdf and node"
 asdf plugin add nodejs || log_info "nodejs plugin might already be installed"
 asdf install nodejs latest
+asdf global nodejs latest
+log_info "Installing npm packages globally"
 npm install -g pp-finder
 
 log_info "Installing pdtm"
+go install github.com/projectdiscovery/pdtm/cmd/pdtm@latest
 pdtm -ia

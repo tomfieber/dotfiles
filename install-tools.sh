@@ -311,7 +311,7 @@ sudo ln -s /opt/tools/massdns/bin/massdns /usr/local/bin/massdns
 
 
 # Install Go tools
-install_go github.com/projectdiscovery/pdtm/cmd/pdtm@latest
+#install_go github.com/projectdiscovery/pdtm/cmd/pdtm@latest
 install_go github.com/owasp-amass/amass/v4/...@master
 install_go github.com/ffuf/ffuf/v2@latest
 install_go github.com/ropnop/kerbrute@latest
@@ -395,8 +395,8 @@ install_pipx git+https://github.com/garrettfoster13/pre2k.git
 # Install sliver 
 curl https://sliver.sh/install|sudo bash
 
-# Enable tiocsti
-echo "dev.tty.legacy_tiocsti=1" | sudo tee -a /etc/sysctl.conf
+# # Enable tiocsti
+# echo "dev.tty.legacy_tiocsti=1" | sudo tee -a /etc/sysctl.conf
 
 # # Install pyenv
 # log_info "Installing pyenv"
