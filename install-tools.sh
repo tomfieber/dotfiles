@@ -233,12 +233,12 @@ if [ -f /opt/tools/powershell.tar.gz ]; then
     fi
 fi
 
-# Install Azure CLI
-log_info "Installing Azure CLI"
-if ! curl -sL https://aka.ms/InstallAzureCLIDeb | sudo DIST_CODE=bookworm bash 2>>$LOG_FILE; then
-    log_error "Failed to install Azure CLI"
-    echo -e "${RED}Failed to install Azure CLI${NC}"
-fi
+# # Install Azure CLI
+# log_info "Installing Azure CLI"
+# if ! curl -sL https://aka.ms/InstallAzureCLIDeb | sudo DIST_CODE=bookworm bash 2>>$LOG_FILE; then
+#     log_error "Failed to install Azure CLI"
+#     echo -e "${RED}Failed to install Azure CLI${NC}"
+# fi
 
 # Install BloodHound Community Edition
 log_info "Installing BloodHound Community Edition"
