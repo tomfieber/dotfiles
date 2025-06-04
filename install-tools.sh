@@ -172,20 +172,6 @@ git_clone_tool() {
     fi
 }
 
-# # Update and upgrade system
-# log_info "Updating and upgrading system"
-# if ! sudo apt update && sudo apt full-upgrade -y 2>>$LOG_FILE; then
-#     log_error "Failed to update and upgrade system"
-#     echo -e "${RED}Failed to update and upgrade system${NC}"
-#     exit 1
-# fi
-
-
-# # Install snap packages
-# install_snap go --classic
-# install_snap rustup --classic
-# install_snap metasploit-framework --classic
-
 if ! rustup default stable 2>>$LOG_FILE; then
     log_error "Failed to set rustup default to stable"
     echo -e "${RED}Failed to set rustup default to stable${NC}"
@@ -195,30 +181,6 @@ if ! msfdb init 2>>$LOG_FILE; then
     log_error "Failed to initialize msfdb"
     echo -e "${RED}Failed to initialize msfdb${NC}"
 fi
-
-# # Install AWS CLI with error handling
-# log_info "Installing AWS CLI"
-# if [ "$SYSARCH" == "x86_64" ]; then
-#     if ! curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
-#         log_error "Failed to download AWS CLI for x86_64"
-#         echo -e "${RED}Failed to download AWS CLI${NC}"
-#     fi
-# elif [ "$SYSARCH" == "aarch64" ]; then
-#     if ! curl 'https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip' -o awscliv2.zip 2>>$LOG_FILE; then
-#         log_error "Failed to download AWS CLI for aarch64"
-#         echo -e "${RED}Failed to download AWS CLI${NC}"
-#     fi
-# else
-#     log_error "Unsupported architecture for AWS CLI: $SYSARCH"
-#     echo -e "${RED}Unsupported architecture for AWS CLI: $SYSARCH${NC}"
-# fi
-
-# # Only continue with AWS CLI install if the zip was downloaded
-# if [ -f awscliv2.zip ]; then
-#     unzip -o awscliv2.zip
-#     sudo ./aws/install
-#     rm -f awscliv2.zip
-# fi
 
 # Install powershell (fix path issue)
 log_info "Installing PowerShell"
@@ -232,13 +194,6 @@ if [ -f /opt/tools/powershell.tar.gz ]; then
         echo -e "${RED}Failed to extract PowerShell${NC}"
     fi
 fi
-
-# # Install Azure CLI
-# log_info "Installing Azure CLI"
-# if ! curl -sL https://aka.ms/InstallAzureCLIDeb | sudo DIST_CODE=bookworm bash 2>>$LOG_FILE; then
-#     log_error "Failed to install Azure CLI"
-#     echo -e "${RED}Failed to install Azure CLI${NC}"
-# fi
 
 # Install BloodHound Community Edition
 log_info "Installing BloodHound Community Edition"
@@ -259,14 +214,6 @@ install_gem evil-winrm
 
 # Install XSpear
 install_gem XSpear
-
-# Install krbrelayx 
-# log_info "Installing krbrelayx"
-# git clone https://github.com/dirkjanm/krbrelayx.git /opt/tools/krbrelayx
-# sudo ln -s /opt/tools/krbrelayx/krbrelayx.py /usr/local/bin/krbrelayx.py
-# sudo ln -s /opt/tools/krbrelayx/addspn.py /usr/local/bin/addspn.py
-# sudo ln -s /opt/tools/krbrelayx/printerbug.py /usr/local/bin/printerbug.py
-# sudo ln -s /opt/tools/krbrelayx/dnstool.py /usr/local/bin/dnstool.py
 
 # Drop a bunch of tools to /opt/tools
 log_info "Cloning various tools into /opt/tools"
@@ -308,10 +255,9 @@ git_clone_tool https://github.com/blechschmidt/massdns.git /opt/tools/massdns
 cd /opt/tools/massdns/
 make
 sudo ln -s /opt/tools/massdns/bin/massdns /usr/local/bin/massdns
-
+git_clone_tool https://github.com/tomfieber/hunter.git /opt/tools/hunter
 
 # Install Go tools
-#install_go github.com/projectdiscovery/pdtm/cmd/pdtm@latest
 install_go github.com/owasp-amass/amass/v4/...@master
 install_go github.com/ffuf/ffuf/v2@latest
 install_go github.com/ropnop/kerbrute@latest
@@ -395,15 +341,6 @@ install_pipx git+https://github.com/garrettfoster13/pre2k.git
 # Install sliver 
 curl https://sliver.sh/install|sudo bash
 
-# # Enable tiocsti
-# echo "dev.tty.legacy_tiocsti=1" | sudo tee -a /etc/sysctl.conf
-
-# # Install pyenv
-# log_info "Installing pyenv"
-# if [ ! -d $HOME/.pyenv ]; then
-#     curl https://pyenv.run | bash
-# fi
-
 echo -n "=========="
 echo
 
@@ -419,23 +356,6 @@ wget https://github.com/six2dez/OneListForAll/archive/refs/tags/v2.4.1.1.tar.gz 
 cd /opt/lists
 tar -xvzf OneListForAll.tar.gz
 rm -rf OneListForAll.tar.gz
-
-# Get the directory where the script is located
-
-# SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-# # Fix shell comparison
-# if [ "$SHELL" = "$(which zsh)" ]; then
-#     log_info "Copying zsh configuration files"
-#     cp -r $SCRIPT_DIR/zshrc $HOME/.zshrc
-#     cp -r $SCRIPT_DIR/zsh_shortcuts $HOME/.zsh_shortcuts
-#     cp -r $SCRIPT_DIR/zsh_aliases $HOME/.zsh_aliases
-#     cp -r $SCRIPT_DIR/th0m12.zsh-theme $HOME/.oh-my-zsh/themes/th0m12.zsh-theme
-#     cp -r $SCRIPT_DIR/tmux.conf $HOME/.tmux.conf
-# else
-#     log_info "Copying bash configuration files"
-#     cp -r $SCRIPT_DIR/zsh_shortcuts $HOME/.bash_shortcuts
-#     cp -r $SCRIPT_DIR/zsh_aliases $HOME/.bash_aliases 
-# fi
 
 # Install zsh plugins
 if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then

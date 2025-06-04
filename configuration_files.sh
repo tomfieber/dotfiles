@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.asdf/bin:$PATH"
 
 # Define logging function
 log_info() {
