@@ -1,4 +1,6 @@
-PROMPT='%{$fg[green]%}[%D{%H:%M:%S}]%{$reset_color%} %{$fg_no_bold[cyan]%}%n %{${fg_bold[blue]}%}::%{$reset_color%} %{$fg[yellow]%}%m%{$reset_color%} %{$fg_no_bold[magenta]%} ➜ %{$reset_color%} %{${fg[green]}%}%3~ $(git_prompt_info)%{${fg_bold[$CARETCOLOR]}%}»%{${reset_color}%} '
+#PROMPT='%{$fg[green]%}[%D{%H:%M:%S}]%{$reset_color%} %{$fg_no_bold[cyan]%}%n %{${fg_bold[blue]}%}::%{$reset_color%} %{$fg[yellow]%}%m%{$reset_color%} %{$fg_no_bold[magenta]%} ➜ %{$reset_color%} %{${fg[green]}%}%3~ $(git_prompt_info)%{${fg_bold[$CARETCOLOR]}%}»%{${reset_color}%} '
+
+PROMPT=$'%B%F{yellow}[$(date +"%d %b %Y %R")] %F{cyan}%m %f» %B%F{#e95420}%(4~.%-1~/…/%2~.%3~) %B%F{magenta}$(git_prompt_info)\n%B%F{%(?.green.red)}➜  %b%f'
 
 setopt autocd              # change directory just by typing its name
 #setopt correct            # auto correct mistakes
