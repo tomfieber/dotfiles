@@ -205,24 +205,10 @@ else
     log_info "Go is already installed: $(go version)"
 fi
 
-install_go github.com/asdf-vm/asdf/cmd/asdf@latest
+go install github.com/asdf-vm/asdf/cmd/asdf@latest
 
 # Make arsenal work
 echo 'dev.tty.legacy_tiocsti = 1' | sudo tee /etc/sysctl.d/legacy_tiocsti.conf > /dev/null
 
-# Install oh-my-zsh if not already installed
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    show_progress "Installing" "Oh My Zsh"
-    log_info "Installing Oh My Zsh"
-    
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended 2>>$LOG_FILE
-    if [ $? -ne 0 ]; then
-        log_error "Failed to install Oh My Zsh"
-        echo -e "${RED}[✗] Failed to install Oh My Zsh${NC}"
-    else
-        show_success "Oh My Zsh"
-    fi
-else
-    log_info "Oh My Zsh is already installed"
-fi
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --prefix=/usr/local --unattended
 

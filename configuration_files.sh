@@ -56,11 +56,9 @@ else
     log_debug "Current shell is: $SHELL"
     copy_file "$SCRIPT_DIR/zsh_shortcuts" "$HOME/.bash_shortcuts" "bash_shortcuts"
     copy_file "$SCRIPT_DIR/zsh_aliases" "$HOME/.bash_aliases" "bash_aliases"
+    copy_file "$SCRIPT_DIR/tmux" "$HOME/.tmux.conf" "tmux.conf"
+    copy_file "$SCRIPT_DIR/bashrc" "$HOME/.bashrc" "bashrc" 
 fi
-
-log_info "Installing zsh plugins"
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions 2>/dev/null || log_info "zsh-autosuggestions already installed or failed"
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting 2>/dev/null || log_info "zsh-syntax-highlighting already installed or failed"
 
 log_info "Setting up asdf and node"
 asdf plugin add nodejs || log_info "nodejs plugin might already be installed"
