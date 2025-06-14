@@ -8,10 +8,8 @@ build-essential
 autoconf
 automake
 direnv
-awscli
 nmap
 python3-requests
-python3-azure-cli
 python3-pkg-resources
 wfuzz
 tesseract-ocr
@@ -37,9 +35,7 @@ upx-ucl
 osslsigncode
 git
 direnv
-fzf
 pipx
-zsh
 cewl
 snapd
 make

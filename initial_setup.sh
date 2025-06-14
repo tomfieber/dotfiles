@@ -207,6 +207,9 @@ fi
 
 go install github.com/asdf-vm/asdf/cmd/asdf@latest
 
+git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+~/.fzf/install 
+
 # Make arsenal work
 echo 'dev.tty.legacy_tiocsti = 1' | sudo tee /etc/sysctl.d/legacy_tiocsti.conf > /dev/null
 
