@@ -50,7 +50,7 @@ if [ "$SHELL" = "$(which zsh)" ]; then
     copy_file "$SCRIPT_DIR/zsh_shortcuts" "$HOME/.zsh_shortcuts" "zsh_shortcuts"
     copy_file "$SCRIPT_DIR/zsh_aliases" "$HOME/.zsh_aliases" "zsh_aliases"
     copy_file "$SCRIPT_DIR/th0m12.zsh-theme" "$HOME/.oh-my-zsh/themes/th0m12.zsh-theme" "theme"
-    copy_file "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf" "tmux.conf"
+    copy_file "$SCRIPT_DIR/tmux" "$HOME/.tmux.conf" "tmux.conf"
 else
     log_info "Detected non-ZSH shell, copying bash configuration files"
     log_debug "Current shell is: $SHELL"
@@ -61,11 +61,11 @@ else
 fi
 
 log_info "Setting up asdf and node"
-asdf plugin add nodejs || log_info "nodejs plugin might already be installed"
+#asdf plugin add nodejs || log_info "nodejs plugin might already be installed"
 asdf install nodejs latest
-asdf global nodejs latest
+asdf set nodejs latest
 log_info "Installing npm packages globally"
-npm install -g pp-finder
+sudo npm install -g pp-finder
 
 log_info "Installing pdtm"
 go install github.com/projectdiscovery/pdtm/cmd/pdtm@latest

@@ -1,7 +1,7 @@
 # This is a Zsh configuration file that sets up various options, keybindings,
 # and prompt styles for a personalized shell experience.
 # Set the theme for the terminal
-PROMPT=$'%F{green}%n@%m%f:%F{magenta}%(4~.%-1~/…/%2~.%3~)%f%(#.#.$) '
+PROMPT=$'%B%F{yellow}%* %(?.%F{green}•.%F{red}•) %F{#e95420}%1~ %F{2}➜  %b%f'
 
 setopt autocd              # change directory just by typing its name
 #setopt correct            # auto correct mistakes

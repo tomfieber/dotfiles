@@ -182,19 +182,6 @@ if ! msfdb init 2>>$LOG_FILE; then
     echo -e "${RED}Failed to initialize msfdb${NC}"
 fi
 
-# Install powershell (fix path issue)
-log_info "Installing PowerShell"
-if ! sudo wget -q https://github.com/PowerShell/PowerShell/releases/download/v7.4.10/powershell-7.4.10-linux-arm64.tar.gz -O /opt/tools/powershell.tar.gz 2>>$LOG_FILE; then
-    log_error "Failed to download PowerShell"
-    echo -e "${RED}Failed to download PowerShell${NC}"
-fi
-if [ -f /opt/tools/powershell.tar.gz ]; then
-    if ! sudo tar -xzf /opt/tools/powershell.tar.gz -C /opt/tools/powershell 2>>$LOG_FILE; then
-        log_error "Failed to extract PowerShell"
-        echo -e "${RED}Failed to extract PowerShell${NC}"
-    fi
-fi
-
 # Install BloodHound Community Edition
 log_info "Installing BloodHound Community Edition"
 wget https://github.com/SpecterOps/bloodhound-cli/releases/latest/download/bloodhound-cli-linux-arm64.tar.gz
@@ -217,10 +204,11 @@ install_gem XSpear
 
 # Drop a bunch of tools to /opt/tools
 log_info "Cloning various tools into /opt/tools"
-git_clone_tool https://github.com/openwall/john.git /opt/tools/john
-cd /opt/tools/john/src
-./configure && make -j$(nproc)
-sudo make install
+# git_clone_tool https://github.com/openwall/john.git /opt/tools/john
+# cd /opt/tools/john/src
+# ./configure && make -j$(nproc)
+# sudo make install
+git_clone_tool https://github.com/dolevf/graphql-cop.git /opt/tools/graphql-cop
 git_clone_tool https://github.com/dirkjanm/krbrelayx.git /opt/tools/krbrelayx
 git_clone_tool https://github.com/micahvandeusen/gMSADumper.git /opt/tools/gMSADumper
 git_clone_tool https://github.com/zyn3rgy/LdapRelayScan.git /opt/tools/ldaprelayscan
@@ -344,19 +332,6 @@ curl https://sliver.sh/install|sudo bash
 echo -n "=========="
 echo
 
-# Install rule lists
-log_info "Installing rule lists"
-wget https://raw.githubusercontent.com/stealthsploit/OneRuleToRuleThemStill/refs/heads/main/OneRuleToRuleThemStill.rule -O /opt/rules/OneRuleToRuleThemStill.rule
-
-# SecLists
-git_clone_tool https://github.com/danielmiessler/SecLists.git /opt/lists/SecLists
-
-# OneListForAll
-wget https://github.com/six2dez/OneListForAll/archive/refs/tags/v2.4.1.1.tar.gz -O /opt/lists/OneListForAll.tar.gz
-cd /opt/lists
-tar -xvzf OneListForAll.tar.gz
-rm -rf OneListForAll.tar.gz
-
 # Install zsh plugins
 if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
     log_info "Installing zsh-autosuggestions plugin"
@@ -370,12 +345,6 @@ if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]
 else
     log_info "zsh-syntax-highlighting plugin already installed"
 fi
-
-asdf plugin add nodejs
-asdf install nodejs latest
-npm install -g pp-finder
-
-pdtm -ia
 
 log_info "Installation completed"
 echo "Log file available at: $LOG_FILE"
