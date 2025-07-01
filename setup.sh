@@ -53,9 +53,24 @@ done
 
 # Setup logging
 mkdir -p "$LOG_DIR"
+
+# Signal handling for graceful shutdown
+cleanup() {
+    local exit_code=$?
+    echo ""
+    echo "Script interrupted. Cleaning up..."
+    # Kill any background processes if they exist
+    jobs -p | xargs -r kill 2>/dev/null || true
+    exit $exit_code
+}
+
+trap cleanup SIGINT SIGTERM
+
+# Setup logging with better output handling
+# We'll use tee for logging while still showing output to user
 exec 3>&1 4>&2
-trap 'exec 2>&4 1>&3' EXIT
-exec 1>>"$LOG_FILE" 2>&1
+exec 1> >(tee -a "$LOG_FILE")
+exec 2> >(tee -a "$LOG_FILE" >&2)
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -66,22 +81,22 @@ NC='\033[0m'
 
 # Logging functions
 log_error() {
-    echo "[ERROR] $(date +"%Y-%m-%d %H:%M:%S") - $1" | tee -a "$LOG_FILE" >&2
+    echo -e "${RED}[ERROR] $(date +"%Y-%m-%d %H:%M:%S") - $1${NC}" >&2
 }
 
 log_info() {
-    echo "[INFO] $(date +"%Y-%m-%d %H:%M:%S") - $1" | tee -a "$LOG_FILE" >&3
+    echo "[INFO] $(date +"%Y-%m-%d %H:%M:%S") - $1"
 }
 
 log_warning() {
-    echo "[WARNING] $(date +"%Y-%m-%d %H:%M:%S") - $1" | tee -a "$LOG_FILE" >&3
+    echo -e "${YELLOW}[WARNING] $(date +"%Y-%m-%d %H:%M:%S") - $1${NC}"
 }
 
 # Progress indicators
 show_progress() {
     local action="$1"
     local item="$2"
-    echo -ne "${BLUE}[*] ${action} ${item}...${NC}\r"
+    echo -e "${BLUE}[*] ${action} ${item}...${NC}"
 }
 
 show_success() {
@@ -92,6 +107,15 @@ show_success() {
 show_error() {
     local item="$1"
     echo -e "${RED}[✗] Failed to process ${item}${NC}"
+}
+
+# Add a function to check if we can reach the internet
+check_internet() {
+    if ! curl -sSf --connect-timeout 5 --max-time 10 http://www.google.com >/dev/null 2>&1; then
+        log_warning "Internet connectivity check failed. Some operations may fail."
+        return 1
+    fi
+    return 0
 }
 
 # Utility functions
@@ -138,12 +162,12 @@ copy_with_backup() {
     fi
     
     # Copy the file/directory
-    if cp -r "$src" "$dest" 2>/dev/null; then
+    if timeout 30 cp -r "$src" "$dest" 2>/dev/null; then
         log_info "Successfully copied $description"
         SUCCESSFUL_OPERATIONS+=("$description")
         return 0
     else
-        log_error "Failed to copy $description"
+        log_error "Failed to copy $description (operation timed out or failed)"
         FAILED_OPERATIONS+=("$description (copy failed)")
         return 1
     fi
@@ -168,7 +192,19 @@ install_system_packages() {
     log_info "Installing system packages from requirements.txt"
     show_progress "Installing" "system packages"
     
-    if xargs -a "$requirements_file" sudo apt-get install -y 2>>"$LOG_FILE"; then
+    # Check internet connectivity first
+    if ! check_internet; then
+        log_error "No internet connectivity for package installation"
+        FAILED_OPERATIONS+=("System packages (no internet)")
+        return 1
+    fi
+    
+    # Update package lists first with timeout
+    if ! timeout 60 sudo apt-get update -qq 2>>"$LOG_FILE"; then
+        log_warning "Package list update failed or timed out"
+    fi
+    
+    if timeout 300 xargs -a "$requirements_file" sudo apt-get install -y 2>>"$LOG_FILE"; then
         show_success "system packages"
         SUCCESSFUL_OPERATIONS+=("System packages")
     else
@@ -238,7 +274,14 @@ setup_python_env() {
     show_progress "Installing" "pyenv"
     log_info "Installing pyenv"
     
-    if curl -sSfL https://pyenv.run | bash 2>>"$LOG_FILE"; then
+    # Check internet connectivity
+    if ! check_internet; then
+        log_error "No internet connectivity for pyenv installation"
+        FAILED_OPERATIONS+=("pyenv (no internet)")
+        return 1
+    fi
+    
+    if curl -sSfL --connect-timeout 10 --max-time 60 https://pyenv.run | bash 2>>"$LOG_FILE"; then
         # Update PATH and initialize pyenv
         export PATH="$HOME/.pyenv/bin:$PATH"
         if [[ -f "$HOME/.pyenv/bin/pyenv" ]]; then
@@ -267,6 +310,13 @@ setup_go() {
     
     show_progress "Installing" "Go (latest version)"
     log_info "Installing Go"
+    
+    # Check internet connectivity
+    if ! check_internet; then
+        log_error "No internet connectivity for Go installation"
+        FAILED_OPERATIONS+=("Go (no internet)")
+        return 1
+    fi
     
     # Detect architecture
     local arch
@@ -297,7 +347,7 @@ setup_go() {
     
     # Get latest Go version
     local latest_version
-    if ! latest_version="$(curl -sSfL 'https://go.dev/VERSION?m=text' 2>>"$LOG_FILE")"; then
+    if ! latest_version="$(curl -sSfL --connect-timeout 10 --max-time 30 'https://go.dev/VERSION?m=text' 2>>"$LOG_FILE")"; then
         log_error "Failed to fetch latest Go version"
         FAILED_OPERATIONS+=("Go (version fetch failed)")
         return 1
@@ -311,7 +361,7 @@ setup_go() {
     
     # Download Go
     log_info "Downloading Go $latest_version for $os-$arch"
-    if ! curl -sSfL "$download_url" -o "$temp_dir/go.tar.gz" 2>>"$LOG_FILE"; then
+    if ! curl -sSfL --connect-timeout 10 --max-time 300 "$download_url" -o "$temp_dir/go.tar.gz" 2>>"$LOG_FILE"; then
         log_error "Failed to download Go"
         FAILED_OPERATIONS+=("Go (download failed)")
         rm -rf "$temp_dir"
@@ -379,8 +429,15 @@ setup_rust() {
     show_progress "Installing" "Rust (latest stable)"
     log_info "Installing Rust via rustup"
     
+    # Check internet connectivity
+    if ! check_internet; then
+        log_error "No internet connectivity for Rust installation"
+        FAILED_OPERATIONS+=("Rust (no internet)")
+        return 1
+    fi
+    
     # Download and run rustup installer
-    if curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable 2>>"$LOG_FILE"; then
+    if curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 300 https://sh.rustup.rs | sh -s -- -y --default-toolchain stable 2>>"$LOG_FILE"; then
         # Source cargo environment
         if [[ -f "$HOME/.cargo/env" ]]; then
             source "$HOME/.cargo/env"
@@ -612,9 +669,16 @@ setup_oh_my_zsh() {
     show_progress "Installing" "Oh My Zsh"
     log_info "Installing Oh My Zsh"
     
+    # Check internet connectivity
+    if ! check_internet; then
+        log_error "No internet connectivity for Oh My Zsh installation"
+        FAILED_OPERATIONS+=("Oh My Zsh (no internet)")
+        return 1
+    fi
+    
     # Download and install Oh My Zsh
     # Use unattended installation to avoid interactive prompts
-    if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended 2>>"$LOG_FILE"; then
+    if sh -c "$(curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended 2>>"$LOG_FILE"; then
         show_success "Oh My Zsh"
         SUCCESSFUL_OPERATIONS+=("Oh My Zsh")
         
@@ -632,6 +696,13 @@ setup_oh_my_zsh() {
 
 # Main execution
 main() {
+    echo "=========================================="
+    echo "    Starting Unified Setup Process"
+    echo "=========================================="
+    echo "Log file: $LOG_FILE"
+    echo "Press Ctrl+C to cancel at any time"
+    echo ""
+    
     log_info "Starting unified setup process"
     log_info "Script directory: $SCRIPT_DIR"
     log_info "Configuration: packages=$([ "$SKIP_PACKAGES" = true ] && echo "skip" || echo "install"), config=$([ "$SKIP_CONFIG" = true ] && echo "skip" || echo "deploy"), force=$FORCE_OVERWRITE"
