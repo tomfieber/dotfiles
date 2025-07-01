@@ -209,13 +209,40 @@ install_system_packages() {
         log_warning "Package list update failed or timed out"
     fi
     
-    if timeout 300 xargs -a "$requirements_file" sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq 2>>"$LOG_FILE"; then
+    # Install packages with extended timeout for large packages
+    log_info "Installing packages (this may take several minutes for large packages)..."
+    if timeout 1800 xargs -a "$requirements_file" sudo DEBIAN_FRONTEND=noninteractive APT_LISTCHANGES_FRONTEND=none apt-get install -y -qq 2>>"$LOG_FILE"; then
         show_success "system packages"
         SUCCESSFUL_OPERATIONS+=("System packages")
     else
-        show_error "system packages"
-        FAILED_OPERATIONS+=("System packages")
-        return 1
+        log_warning "Bulk package installation failed, trying individual packages..."
+        local failed_packages=()
+        local successful_packages=()
+        
+        # Try installing packages individually
+        while IFS= read -r package; do
+            # Skip empty lines and comments
+            [[ -z "$package" || "$package" =~ ^[[:space:]]*# ]] && continue
+            
+            log_info "Installing individual package: $package"
+            if timeout 300 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$package" 2>>"$LOG_FILE"; then
+                successful_packages+=("$package")
+            else
+                failed_packages+=("$package")
+                log_warning "Failed to install package: $package"
+            fi
+        done < "$requirements_file"
+        
+        if [[ ${#successful_packages[@]} -gt 0 ]]; then
+            log_info "Successfully installed ${#successful_packages[@]} packages individually"
+            SUCCESSFUL_OPERATIONS+=("System packages (${#successful_packages[@]}/${#failed_packages[@]} + ${#successful_packages[@]} total)")
+        fi
+        
+        if [[ ${#failed_packages[@]} -gt 0 ]]; then
+            log_error "Failed to install ${#failed_packages[@]} packages: ${failed_packages[*]}"
+            FAILED_OPERATIONS+=("System packages (${failed_packages[*]})")
+            return 1
+        fi
     fi
 }
 
@@ -718,6 +745,11 @@ main() {
     export UCF_FORCE_CONFFNEW=1
     export PYENV_INSTALLER_BATCH=1
     export RUSTUP_INIT_SKIP_PATH_CHECK=yes
+    
+    # Prevent postfix and other service configuration prompts
+    export APT_LISTCHANGES_FRONTEND=none
+    export DEBIAN_PRIORITY=critical
+    export DEBCONF_NONINTERACTIVE_SEEN=true
     
     log_info "Starting unified setup process"
     log_info "Script directory: $SCRIPT_DIR"
