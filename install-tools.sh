@@ -150,7 +150,7 @@ check_prerequisites
 
 # Create necessary directories with better error handling
 create_directories() {
-    local dirs=("/opt/tools" "/opt/rules" "/opt/lists" "/opt/tools/powershell")
+    local dirs=("/opt/tools/powershell")
     
     for dir in "${dirs[@]}"; do
         if [ ! -d "$dir" ]; then

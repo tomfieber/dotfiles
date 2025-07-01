@@ -1,4 +1,6 @@
 jq
+golang
+rustup
 pipx
 curl
 wget
