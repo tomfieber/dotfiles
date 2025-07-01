@@ -199,7 +199,7 @@ setup_directories() {
     
     # Copy opt files if they exist
     if [[ -d "$SCRIPT_DIR/opt" ]]; then
-        if copy_with_backup "$SCRIPT_DIR/opt/"* "/opt/" "opt files"; then
+        if copy_with_backup "$SCRIPT_DIR/opt/" "/opt/" "opt files"; then
             sudo chown -R "$USER:$USER" /opt
         fi
     fi
