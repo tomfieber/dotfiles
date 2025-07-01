@@ -80,6 +80,10 @@ source ~/.zshrc  # or source ~/.bashrc if using bash
 - Added informative error messages that guide users to run `initial_setup.sh` first
 - Improved logging throughout the process
 
+## Alternative: Unified Setup Script
+
+If you prefer a single script approach, consider using `setup.sh` which appears to combine functionality from multiple scripts. However, the modular approach allows for more flexibility and easier debugging.
+
 ## Troubleshooting
 
 ### Oh My Zsh Not Found
@@ -102,4 +106,3 @@ If zsh plugins aren't working:
 2. Verify plugins are listed in `~/.zshrc` plugins array
 3. Run `initial_setup.sh` to install missing plugins
 4. Restart your shell
-

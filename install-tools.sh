@@ -640,11 +640,19 @@ echo
 # Install zsh plugins with better error handling
 install_zsh_plugins() {
     if [ -z "${ZSH_CUSTOM:-}" ] && [ ! -d "$HOME/.oh-my-zsh" ]; then
-        log_warning "Oh My Zsh not found - skipping zsh plugins"
+        log_warning "Oh My Zsh not found - skipping zsh plugins. Run initial_setup.sh first to install Oh My Zsh."
         return 0
     fi
     
     local zsh_custom="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+    
+    # Check if plugins are already installed
+    if [ -d "$zsh_custom/plugins/zsh-autosuggestions" ] && [ -d "$zsh_custom/plugins/zsh-syntax-highlighting" ]; then
+        log_info "Zsh plugins already installed from initial setup"
+        SKIPPED_INSTALLS+=("zsh-autosuggestions (already installed)")
+        SKIPPED_INSTALLS+=("zsh-syntax-highlighting (already installed)")
+        return 0
+    fi
     
     # zsh-autosuggestions
     if [ ! -d "$zsh_custom/plugins/zsh-autosuggestions" ]; then

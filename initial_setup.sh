@@ -20,6 +20,10 @@ log_info() {
     echo "[INFO] $(date +"%Y-%m-%d %H:%M:%S") - $1" | tee -a "$LOG_FILE" >&3
 }
 
+log_warning() {
+    echo "[WARNING] $(date +"%Y-%m-%d %H:%M:%S") - $1" | tee -a "$LOG_FILE" >&2
+}
+
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -187,6 +191,93 @@ else
     log_info "pyenv is already installed"
 fi
 
+# Install Oh My Zsh if using zsh shell
+install_oh_my_zsh() {
+    local current_shell
+    current_shell="$(basename "$SHELL")"
+    
+    if [[ "$current_shell" != "zsh" ]]; then
+        log_info "Not using ZSH shell, skipping Oh My Zsh installation"
+        return 0
+    fi
+    
+    if [[ -d "$HOME/.oh-my-zsh" ]]; then
+        log_info "Oh My Zsh already installed"
+        return 0
+    fi
+    
+    show_progress "Installing" "Oh My Zsh"
+    log_info "Installing Oh My Zsh"
+    
+    # Check internet connectivity with a simple ping
+    if ! ping -c 1 8.8.8.8 >/dev/null 2>&1; then
+        log_error "No internet connectivity for Oh My Zsh installation"
+        echo -e "${RED}[✗] Failed to install Oh My Zsh - no internet${NC}"
+        return 1
+    fi
+    
+    # Download and install Oh My Zsh unattended
+    if sh -c "$(curl -fsSL --connect-timeout 10 --max-time 60 https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended 2>>$LOG_FILE; then
+        show_success "Oh My Zsh"
+        log_info "Oh My Zsh installed successfully"
+        
+        # Backup the default .zshrc created by Oh My Zsh since we'll overwrite it later
+        if [[ -f "$HOME/.zshrc" ]]; then
+            cp "$HOME/.zshrc" "$HOME/.zshrc.omz-default.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+            log_info "Backed up Oh My Zsh default .zshrc"
+        fi
+    else
+        log_error "Failed to install Oh My Zsh"
+        echo -e "${RED}[✗] Failed to install Oh My Zsh${NC}"
+        return 1
+    fi
+}
+
+# Install zsh plugins if Oh My Zsh is available
+install_zsh_plugins() {
+    if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+        log_info "Oh My Zsh not found - skipping zsh plugins"
+        return 0
+    fi
+    
+    local zsh_custom="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+    
+    show_progress "Installing" "zsh plugins"
+    log_info "Installing zsh plugins"
+    
+    # zsh-autosuggestions
+    if [[ ! -d "$zsh_custom/plugins/zsh-autosuggestions" ]]; then
+        log_info "Installing zsh-autosuggestions plugin"
+        if git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions "$zsh_custom/plugins/zsh-autosuggestions" 2>>$LOG_FILE; then
+            log_info "zsh-autosuggestions installed successfully"
+        else
+            log_error "Failed to install zsh-autosuggestions"
+        fi
+    else
+        log_info "zsh-autosuggestions plugin already installed"
+    fi
+    
+    # zsh-syntax-highlighting  
+    if [[ ! -d "$zsh_custom/plugins/zsh-syntax-highlighting" ]]; then
+        log_info "Installing zsh-syntax-highlighting plugin"
+        if git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$zsh_custom/plugins/zsh-syntax-highlighting" 2>>$LOG_FILE; then
+            log_info "zsh-syntax-highlighting installed successfully"
+        else
+            log_error "Failed to install zsh-syntax-highlighting"
+        fi
+    else
+        log_info "zsh-syntax-highlighting plugin already installed"
+    fi
+    
+    if [[ -d "$zsh_custom/plugins/zsh-autosuggestions" && -d "$zsh_custom/plugins/zsh-syntax-highlighting" ]]; then
+        show_success "zsh plugins"
+    fi
+}
+
+# Call the installation functions
+install_oh_my_zsh
+install_zsh_plugins
+
 # Install Go tools
 if command -v go &> /dev/null; then
     show_progress "Installing" "Go tools"
@@ -313,6 +404,16 @@ if command -v pyenv &> /dev/null; then
     echo "✅ pyenv installed"
 else
     echo "❌ pyenv installation failed"
+fi
+if [[ -d "$HOME/.oh-my-zsh" ]]; then
+    echo "✅ Oh My Zsh installed"
+    if [[ -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" && -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]]; then
+        echo "✅ Zsh plugins installed"
+    else
+        echo "⚠️  Zsh plugins partially installed"
+    fi
+else
+    echo "❌ Oh My Zsh installation failed or skipped"
 fi
 echo "✅ System configuration applied"
 echo ""

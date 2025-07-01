@@ -49,7 +49,14 @@ if [ "$SHELL" = "$(which zsh)" ]; then
     copy_file "$SCRIPT_DIR/zshrc" "$HOME/.zshrc" "zshrc"
     copy_file "$SCRIPT_DIR/zsh_shortcuts" "$HOME/.zsh_shortcuts" "zsh_shortcuts"
     copy_file "$SCRIPT_DIR/zsh_aliases" "$HOME/.zsh_aliases" "zsh_aliases"
-    copy_file "$SCRIPT_DIR/th0m12.zsh-theme" "$HOME/.oh-my-zsh/themes/th0m12.zsh-theme" "theme"
+    
+    # Only copy theme if oh-my-zsh is installed
+    if [ -d "$HOME/.oh-my-zsh" ]; then
+        copy_file "$SCRIPT_DIR/th0m12.zsh-theme" "$HOME/.oh-my-zsh/themes/th0m12.zsh-theme" "theme"
+    else
+        log_error "Oh My Zsh not found - skipping theme installation. Run initial_setup.sh first."
+    fi
+    
     copy_file "$SCRIPT_DIR/tmux" "$HOME/.tmux.conf" "tmux.conf"
 else
     log_info "Detected non-ZSH shell, copying bash configuration files"
