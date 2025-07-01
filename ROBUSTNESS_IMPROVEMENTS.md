@@ -10,6 +10,7 @@ The original script was hanging and not responding to keyboard interrupts due to
 - No signal handling for graceful shutdown
 - Potentially infinite curl operations without timeouts
 - No progress feedback visible to users
+- **Interactive prompts and ncurses menus preventing automation**
 
 #### **Solutions Implemented:**
 
@@ -101,7 +102,26 @@ if timeout 30 cp -r "$src" "$dest" 2>/dev/null; then
 - **Prevents**: Hanging on NFS mounts or slow storage
 - **Timeout**: 30 seconds for file operations
 
-### **6. User Experience Improvements**
+### **6. Non-Interactive Mode Implementation**
+
+#### **Global Environment Variables:**
+```bash
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+export UCF_FORCE_CONFFNEW=1
+export PYENV_INSTALLER_BATCH=1
+export RUSTUP_INIT_SKIP_PATH_CHECK=yes
+```
+
+#### **Specific Improvements:**
+- **APT packages**: Added `-qq` and `DEBIAN_FRONTEND=noninteractive`
+- **Rust installation**: Added `--no-modify-path` and skip path check
+- **Python installation**: Added `PYENV_INSTALLER_BATCH=1`
+- **Node.js installation**: Added `NODEJS_CHECK_SIGNATURES=no`
+- **NPM packages**: Added `--silent` flag
+
+### **7. User Experience Improvements**
 
 #### **Startup Banner:**
 ```bash
@@ -155,7 +175,12 @@ log_warning() {
 - ✅ Provides clear error messages for network failures
 - ✅ Graceful fallback when network is unavailable
 
-### **5. Real-time Feedback**
+### **6. Non-Interactive Automation**
+- ✅ No ncurses menus or interactive prompts
+- ✅ All operations use sensible defaults
+- ✅ Compatible with headless and CI/CD environments
+
+### **7. Real-time Feedback**
 - ✅ Immediate progress indicators
 - ✅ Live error reporting
 - ✅ Color-coded status messages

@@ -5,6 +5,11 @@
 
 set -euo pipefail
 
+# Ensure non-interactive mode for all operations
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+
 # Global variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$HOME/.local/logging"
@@ -200,11 +205,11 @@ install_system_packages() {
     fi
     
     # Update package lists first with timeout
-    if ! timeout 60 sudo apt-get update -qq 2>>"$LOG_FILE"; then
+    if ! timeout 60 sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq 2>>"$LOG_FILE"; then
         log_warning "Package list update failed or timed out"
     fi
     
-    if timeout 300 xargs -a "$requirements_file" sudo apt-get install -y 2>>"$LOG_FILE"; then
+    if timeout 300 xargs -a "$requirements_file" sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq 2>>"$LOG_FILE"; then
         show_success "system packages"
         SUCCESSFUL_OPERATIONS+=("System packages")
     else
@@ -281,7 +286,7 @@ setup_python_env() {
         return 1
     fi
     
-    if curl -sSfL --connect-timeout 10 --max-time 60 https://pyenv.run | bash 2>>"$LOG_FILE"; then
+    if curl -sSfL --connect-timeout 10 --max-time 60 https://pyenv.run | PYENV_INSTALLER_BATCH=1 bash 2>>"$LOG_FILE"; then
         # Update PATH and initialize pyenv
         export PATH="$HOME/.pyenv/bin:$PATH"
         if [[ -f "$HOME/.pyenv/bin/pyenv" ]]; then
@@ -437,7 +442,7 @@ setup_rust() {
     fi
     
     # Download and run rustup installer
-    if curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 300 https://sh.rustup.rs | sh -s -- -y --default-toolchain stable 2>>"$LOG_FILE"; then
+    if curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 300 https://sh.rustup.rs | RUSTUP_INIT_SKIP_PATH_CHECK=yes sh -s -- -y --default-toolchain stable --no-modify-path 2>>"$LOG_FILE"; then
         # Source cargo environment
         if [[ -f "$HOME/.cargo/env" ]]; then
             source "$HOME/.cargo/env"
@@ -527,6 +532,9 @@ setup_nodejs() {
         # Add nodejs plugin (ignore errors if already exists)
         asdf plugin add nodejs 2>/dev/null || true
         
+        # Set environment for non-interactive installation
+        export NODEJS_CHECK_SIGNATURES=no
+        
         if asdf install nodejs latest 2>>"$LOG_FILE"; then
             asdf global nodejs latest 2>>"$LOG_FILE"
             SUCCESSFUL_OPERATIONS+=("Node.js via asdf")
@@ -543,7 +551,7 @@ setup_nodejs() {
     # Install npm packages
     if command_exists npm; then
         log_info "Installing npm packages globally"
-        if sudo npm install -g pp-finder 2>>"$LOG_FILE"; then
+        if sudo npm install -g pp-finder --silent 2>>"$LOG_FILE"; then
             SUCCESSFUL_OPERATIONS+=("npm packages")
         else
             FAILED_OPERATIONS+=("npm packages")
@@ -611,7 +619,7 @@ setup_system_config() {
     # Arsenal compatibility (legacy tiocsti)
     local sysctl_config="/etc/sysctl.d/legacy_tiocsti.conf"
     if [[ ! -f "$sysctl_config" ]]; then
-        if echo 'dev.tty.legacy_tiocsti = 1' | sudo tee "$sysctl_config" >/dev/null 2>>"$LOG_FILE"; then
+        if echo 'dev.tty.legacy_tiocsti = 1' | sudo DEBIAN_FRONTEND=noninteractive tee "$sysctl_config" >/dev/null 2>>"$LOG_FILE"; then
             log_info "Applied legacy_tiocsti configuration for arsenal compatibility"
             SUCCESSFUL_OPERATIONS+=("System configuration")
         else
@@ -702,6 +710,14 @@ main() {
     echo "Log file: $LOG_FILE"
     echo "Press Ctrl+C to cancel at any time"
     echo ""
+    
+    # Ensure completely non-interactive environment
+    export DEBIAN_FRONTEND=noninteractive
+    export NEEDRESTART_MODE=a
+    export NEEDRESTART_SUSPEND=1
+    export UCF_FORCE_CONFFNEW=1
+    export PYENV_INSTALLER_BATCH=1
+    export RUSTUP_INIT_SKIP_PATH_CHECK=yes
     
     log_info "Starting unified setup process"
     log_info "Script directory: $SCRIPT_DIR"
