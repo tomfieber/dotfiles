@@ -1,4 +1,3 @@
-# Essential packages (high priority, widely available)
 jq
 zsh
 curl
@@ -38,3 +37,30 @@ binwalk
 wfuzz
 antiword
 patchelf
+pipx
+python3-netifaces
+python3-quamash
+python3-pyfiglet
+python3-pandas
+python3-shodan
+python3-aioquic
+docker.io
+docker-compose
+libkrb5-dev
+sleuthkit
+autopsy
+volatility
+safecopy
+gddrescue
+guymager
+tesseract-ocr
+prips
+dirb
+mingw-w64-tools
+mingw-w64-common
+g++-mingw-w64
+gcc-mingw-w64
+upx-ucl
+osslsigncode
+cewl
+snapd
