@@ -123,6 +123,20 @@ check_internet() {
     return 0
 }
 
+# Enhanced internet connectivity check with multiple endpoints
+check_internet_enhanced() {
+    local endpoints=("http://www.google.com" "http://www.github.com" "http://archive.ubuntu.com")
+    
+    for endpoint in "${endpoints[@]}"; do
+        if curl -sSf --connect-timeout 5 --max-time 10 "$endpoint" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    
+    log_warning "Internet connectivity check failed for all endpoints"
+    return 1
+}
+
 # Utility functions
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -134,6 +148,29 @@ check_file_exists() {
         return 1
     fi
     return 0
+}
+
+# Network operations with retry logic
+download_with_retry() {
+    local url="$1"
+    local output="$2"
+    local max_retries="${3:-3}"
+    local retry_count=0
+    
+    while [[ $retry_count -lt $max_retries ]]; do
+        if curl -fsSL --connect-timeout 10 --max-time 300 "$url" -o "$output" 2>>"$LOG_FILE"; then
+            return 0
+        else
+            retry_count=$((retry_count + 1))
+            if [[ $retry_count -lt $max_retries ]]; then
+                log_warning "Download failed, retrying in 5 seconds... (attempt $retry_count/$max_retries)"
+                sleep 5
+            fi
+        fi
+    done
+    
+    log_error "Failed to download $url after $max_retries attempts"
+    return 1
 }
 
 # Enhanced file copying with backup and validation
@@ -178,6 +215,134 @@ copy_with_backup() {
     fi
 }
 
+# Check if package is available in repositories
+check_package_available() {
+    local package="$1"
+    # Use apt-cache policy to check if package exists
+    if apt-cache policy "$package" 2>/dev/null | grep -q "Candidate:"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Enable required repositories
+enable_repositories() {
+    log_info "Enabling required repositories..."
+    
+    # Enable universe repository for additional packages
+    if ! grep -q "^deb.*universe" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+        log_info "Enabling universe repository..."
+        if sudo add-apt-repository universe -y >/dev/null 2>&1; then
+            log_info "Universe repository enabled"
+        else
+            log_warning "Failed to enable universe repository"
+        fi
+    fi
+    
+    # Update package lists after repository changes
+    log_info "Updating package lists..."
+    if timeout 120 sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq 2>>"$LOG_FILE"; then
+        log_info "Package lists updated successfully"
+    else
+        log_warning "Package list update failed or timed out"
+    fi
+}
+
+# Install packages from a file with improved error handling
+install_packages_from_file() {
+    local requirements_file="$1"
+    local package_type="$2"
+    local allow_failures="${3:-false}"
+    
+    if ! check_file_exists "$requirements_file"; then
+        log_warning "$requirements_file not found, skipping $package_type installation"
+        SKIPPED_OPERATIONS+=("$package_type (no requirements file)")
+        return 0
+    fi
+    
+    log_info "Installing $package_type from $requirements_file"
+    
+    local failed_packages=()
+    local successful_packages=()
+    local unavailable_packages=()
+    
+    # Read packages and filter out comments/empty lines
+    local packages=()
+    while IFS= read -r package; do
+        # Skip empty lines and comments
+        [[ -z "$package" || "$package" =~ ^[[:space:]]*# ]] && continue
+        packages+=("$package")
+    done < "$requirements_file"
+    
+    log_info "Processing ${#packages[@]} $package_type..."
+    
+    # Check package availability first
+    for package in "${packages[@]}"; do
+        if check_package_available "$package"; then
+            log_info "Package available: $package"
+        else
+            log_warning "Package not available in repositories: $package"
+            unavailable_packages+=("$package")
+        fi
+    done
+    
+    # Install available packages individually
+    for package in "${packages[@]}"; do
+        # Skip unavailable packages
+        if [[ " ${unavailable_packages[*]} " =~ " ${package} " ]]; then
+            continue
+        fi
+        
+        show_progress "Installing" "$package"
+        
+        # Use apt-get install with specific options to avoid issues
+        if timeout 300 sudo DEBIAN_FRONTEND=noninteractive \
+           apt-get install -y -qq \
+           --no-install-recommends \
+           --no-install-suggests \
+           --allow-unauthenticated \
+           "$package" 2>>"$LOG_FILE"; then
+            successful_packages+=("$package")
+            echo -e "${GREEN}[✓] $package${NC}"
+        else
+            failed_packages+=("$package")
+            echo -e "${RED}[✗] $package${NC}"
+            if [[ "$allow_failures" != "true" ]]; then
+                log_error "Critical package failed: $package"
+            else
+                log_warning "Optional package failed: $package"
+            fi
+        fi
+    done
+    
+    # Report results
+    local total_attempted=$((${#successful_packages[@]} + ${#failed_packages[@]}))
+    
+    if [[ ${#successful_packages[@]} -gt 0 ]]; then
+        log_info "Successfully installed ${#successful_packages[@]}/$total_attempted $package_type"
+        SUCCESSFUL_OPERATIONS+=("$package_type (${#successful_packages[@]}/$total_attempted)")
+    fi
+    
+    if [[ ${#failed_packages[@]} -gt 0 ]]; then
+        if [[ "$allow_failures" == "true" ]]; then
+            log_warning "Failed to install ${#failed_packages[@]} optional $package_type: ${failed_packages[*]}"
+            SKIPPED_OPERATIONS+=("Optional $package_type (${failed_packages[*]})")
+        else
+            log_error "Failed to install ${#failed_packages[@]} essential $package_type: ${failed_packages[*]}"
+            FAILED_OPERATIONS+=("$package_type (${failed_packages[*]})")
+            return 1
+        fi
+    fi
+    
+    if [[ ${#unavailable_packages[@]} -gt 0 ]]; then
+        log_warning "${#unavailable_packages[@]} packages not available in repositories: ${unavailable_packages[*]}"
+        SKIPPED_OPERATIONS+=("Unavailable $package_type (${unavailable_packages[*]})")
+    fi
+    
+    return 0
+}
+
 # System package installation
 install_system_packages() {
     if [[ "$SKIP_PACKAGES" == true ]]; then
@@ -186,17 +351,6 @@ install_system_packages() {
         return 0
     fi
     
-    local requirements_file="$SCRIPT_DIR/requirements.txt"
-    
-    if ! check_file_exists "$requirements_file"; then
-        log_warning "requirements.txt not found, skipping package installation"
-        SKIPPED_OPERATIONS+=("System packages (no requirements.txt)")
-        return 0
-    fi
-    
-    log_info "Installing system packages from requirements.txt"
-    show_progress "Installing" "system packages"
-    
     # Check internet connectivity first
     if ! check_internet; then
         log_error "No internet connectivity for package installation"
@@ -204,46 +358,16 @@ install_system_packages() {
         return 1
     fi
     
-    # Update package lists first with timeout
-    if ! timeout 60 sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq 2>>"$LOG_FILE"; then
-        log_warning "Package list update failed or timed out"
-    fi
+    # Enable required repositories
+    enable_repositories
     
-    # Install packages with extended timeout for large packages
-    log_info "Installing packages (this may take several minutes for large packages)..."
-    if timeout 1800 xargs -a "$requirements_file" sudo DEBIAN_FRONTEND=noninteractive APT_LISTCHANGES_FRONTEND=none apt-get install -y -qq 2>>"$LOG_FILE"; then
-        show_success "system packages"
-        SUCCESSFUL_OPERATIONS+=("System packages")
-    else
-        log_warning "Bulk package installation failed, trying individual packages..."
-        local failed_packages=()
-        local successful_packages=()
-        
-        # Try installing packages individually
-        while IFS= read -r package; do
-            # Skip empty lines and comments
-            [[ -z "$package" || "$package" =~ ^[[:space:]]*# ]] && continue
-            
-            log_info "Installing individual package: $package"
-            if timeout 300 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$package" 2>>"$LOG_FILE"; then
-                successful_packages+=("$package")
-            else
-                failed_packages+=("$package")
-                log_warning "Failed to install package: $package"
-            fi
-        done < "$requirements_file"
-        
-        if [[ ${#successful_packages[@]} -gt 0 ]]; then
-            log_info "Successfully installed ${#successful_packages[@]} packages individually"
-            SUCCESSFUL_OPERATIONS+=("System packages (${#successful_packages[@]}/${#failed_packages[@]} + ${#successful_packages[@]} total)")
-        fi
-        
-        if [[ ${#failed_packages[@]} -gt 0 ]]; then
-            log_error "Failed to install ${#failed_packages[@]} packages: ${failed_packages[*]}"
-            FAILED_OPERATIONS+=("System packages (${failed_packages[*]})")
-            return 1
-        fi
-    fi
+    # Install essential packages first (failures are critical)
+    local requirements_file="$SCRIPT_DIR/requirements.txt"
+    install_packages_from_file "$requirements_file" "essential packages" false
+    
+    # Install optional packages (failures are acceptable)
+    local optional_requirements="$SCRIPT_DIR/requirements-optional.txt"
+    install_packages_from_file "$optional_requirements" "optional packages" true
 }
 
 # Directory and permission setup
@@ -279,15 +403,13 @@ setup_directories() {
 setup_user_groups() {
     log_info "Setting up user groups"
     
-    # Add user to docker and sudo groups if they exist
-    if getent group docker >/dev/null 2>&1; then
-        sudo usermod -aG docker "$USER" 2>/dev/null || log_warning "Failed to add user to docker group"
-    else
-        log_warning "Docker group not found"
-    fi
-    
+    # Add user to sudo group if it exists
     if getent group sudo >/dev/null 2>&1; then
-        sudo usermod -aG sudo "$USER" 2>/dev/null || log_warning "Failed to add user to sudo group"
+        if sudo usermod -aG sudo "$USER" 2>/dev/null; then
+            log_info "User added to sudo group"
+        else
+            log_warning "Failed to add user to sudo group"
+        fi
     else
         log_warning "Sudo group not found"
     fi
@@ -393,7 +515,7 @@ setup_go() {
     
     # Download Go
     log_info "Downloading Go $latest_version for $os-$arch"
-    if ! curl -sSfL --connect-timeout 10 --max-time 300 "$download_url" -o "$temp_dir/go.tar.gz" 2>>"$LOG_FILE"; then
+    if ! download_with_retry "$download_url" "$temp_dir/go.tar.gz" 3; then
         log_error "Failed to download Go"
         FAILED_OPERATIONS+=("Go (download failed)")
         rm -rf "$temp_dir"
@@ -729,6 +851,105 @@ setup_oh_my_zsh() {
     fi
 }
 
+# Package system maintenance
+fix_broken_packages() {
+    log_info "Checking for broken packages and dependencies..."
+    
+    # Fix broken packages
+    if sudo DEBIAN_FRONTEND=noninteractive apt-get -f install -y -qq 2>>"$LOG_FILE"; then
+        log_info "Package dependency issues resolved"
+    else
+        log_warning "Some package dependency issues could not be resolved automatically"
+    fi
+    
+    # Clean package cache
+    sudo apt-get autoclean -qq 2>>"$LOG_FILE" || true
+    sudo apt-get autoremove -y -qq 2>>"$LOG_FILE" || true
+}
+
+# Verify critical packages are installed
+verify_essential_packages() {
+    local essential_packages=("curl" "wget" "git" "python3" "python3-pip" "build-essential")
+    local missing_packages=()
+    
+    for package in "${essential_packages[@]}"; do
+        if ! dpkg -l "$package" >/dev/null 2>&1; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        log_warning "Essential packages missing: ${missing_packages[*]}"
+        log_info "Attempting to install missing essential packages..."
+        
+        for package in "${missing_packages[@]}"; do
+            if sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$package" 2>>"$LOG_FILE"; then
+                log_info "Successfully installed essential package: $package"
+            else
+                log_error "Failed to install essential package: $package"
+                FAILED_OPERATIONS+=("Essential package: $package")
+            fi
+        done
+    else
+        log_info "All essential packages are installed"
+    fi
+}
+
+# Docker setup with improved handling
+setup_docker() {
+    log_info "Setting up Docker..."
+    
+    # Check if Docker is already installed and working
+    if command_exists docker && sudo docker --version >/dev/null 2>&1; then
+        log_info "Docker is already installed and working"
+        SUCCESSFUL_OPERATIONS+=("Docker (already installed)")
+        return 0
+    fi
+    
+    # Install Docker if not present
+    if ! command_exists docker; then
+        log_info "Installing Docker..."
+        if sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker.io 2>>"$LOG_FILE"; then
+            log_info "Docker installed successfully"
+        else
+            log_warning "Failed to install Docker via apt, trying Docker's official script..."
+            if curl -fsSL https://get.docker.com -o get-docker.sh 2>/dev/null && \
+               timeout 300 sh get-docker.sh >/dev/null 2>&1; then
+                log_info "Docker installed via official script"
+                rm -f get-docker.sh
+            else
+                log_error "Failed to install Docker"
+                FAILED_OPERATIONS+=("Docker installation")
+                rm -f get-docker.sh
+                return 1
+            fi
+        fi
+    fi
+    
+    # Start and enable Docker service
+    if sudo systemctl enable docker >/dev/null 2>&1 && \
+       sudo systemctl start docker >/dev/null 2>&1; then
+        log_info "Docker service started and enabled"
+    else
+        log_warning "Failed to start Docker service (may require manual intervention)"
+    fi
+    
+    # Add user to docker group
+    if getent group docker >/dev/null 2>&1; then
+        if sudo usermod -aG docker "$USER" 2>/dev/null; then
+            log_info "User added to docker group"
+            log_info "Note: Log out and back in for Docker group changes to take effect"
+        else
+            log_warning "Failed to add user to docker group"
+        fi
+    else
+        log_warning "Docker group not found"
+    fi
+    
+    SUCCESSFUL_OPERATIONS+=("Docker setup")
+    return 0
+}
+
 # Main execution
 main() {
     echo "=========================================="
@@ -756,7 +977,10 @@ main() {
     log_info "Configuration: packages=$([ "$SKIP_PACKAGES" = true ] && echo "skip" || echo "install"), config=$([ "$SKIP_CONFIG" = true ] && echo "skip" || echo "deploy"), force=$FORCE_OVERWRITE"
     
     # Execute setup phases
+    verify_essential_packages
     install_system_packages
+    fix_broken_packages
+    setup_docker
     setup_directories
     setup_user_groups
     setup_python_env
@@ -768,6 +992,7 @@ main() {
     deploy_configuration
     setup_system_config
     update_path
+    setup_docker
     
     # Print summary
     print_summary
