@@ -76,12 +76,29 @@ Displays a comprehensive summary of all installation results.
 # Make script executable
 chmod +x install-tools.sh
 
-# Run the script
+# Run the script (installs core tools only)
 ./install-tools.sh
+
+# Run with GitHub tools included
+./install-tools.sh --github-tools
+
+# Show help
+./install-tools.sh --help
 
 # Check the log file for details
 tail -f ~/.local/logging/install-tools-*.log
 ```
+
+## Command Line Options
+
+### `--github-tools`
+- **Purpose**: Install GitHub-based security tools that are cloned to `/opt/tools`
+- **Default**: Disabled (tools are skipped by default)
+- **Includes**: ~30 security tools like Responder, BloodHound.py components, enumeration tools, etc.
+- **Why optional**: These tools require significant disk space and may not be needed in all environments
+
+### `--help` or `-h`
+- Shows usage information and available options
 
 ## Dry Run Testing
 

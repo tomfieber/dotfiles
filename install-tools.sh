@@ -3,6 +3,30 @@
 # Exit on any error, undefined variables, and pipe failures
 set -euo pipefail
 
+# Parse command line arguments
+INSTALL_GITHUB_TOOLS=false
+
+for arg in "$@"; do
+    case $arg in
+        --github-tools)
+            INSTALL_GITHUB_TOOLS=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  --github-tools    Install GitHub-based tools (git clones to /opt/tools)"
+            echo "  --help, -h        Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 # Setup error logging
 if [ ! -d "$HOME/.local/logging" ]; then
     mkdir -p "$HOME/.local/logging"
@@ -390,32 +414,7 @@ install_bloodhound() {
 
 install_bloodhound
 
-# Install Rust tools
-if command_exists cargo; then
-    log_info "Installing Rust tools"
-    if [ -f "$HOME/.cargo/env" ]; then
-        source "$HOME/.cargo/env"
-    fi
-    
-    install_rust feroxbuster 
-    install_rust rustscan    
-else
-    log_warning "Cargo not available - skipping Rust tools"
-fi    
-
-# Install evil-winrm
-install_gem evil-winrm 
-
-# Install XSpear
-install_gem XSpear
-
-# Drop a bunch of tools to /opt/tools
-log_info "Cloning various tools into /opt/tools"
-# git_clone_tool https://github.com/openwall/john.git /opt/tools/john
-# cd /opt/tools/john/src
-# ./configure && make -j$(nproc)
-# sudo make install
-# Improve massdns installation
+# Improve massdns installation function
 install_massdns() {
     if [ -d "/opt/tools/massdns" ]; then
         log_info "massdns already exists"
@@ -439,39 +438,72 @@ install_massdns() {
     fi
 }
 
-git_clone_tool https://github.com/dolevf/graphql-cop.git /opt/tools/graphql-cop
-git_clone_tool https://github.com/dirkjanm/krbrelayx.git /opt/tools/krbrelayx
-git_clone_tool https://github.com/micahvandeusen/gMSADumper.git /opt/tools/gMSADumper
-git_clone_tool https://github.com/zyn3rgy/LdapRelayScan.git /opt/tools/ldaprelayscan
-git_clone_tool https://github.com/bats3c/darkarmour.git /opt/tools/DarkAmour 
-git_clone_tool https://github.com/m0rtem/CloudFail.git /opt/tools/CloudFail
-git_clone_tool https://github.com/Ridter/noPac.git /opt/tools/noPac
-git_clone_tool https://github.com/evilmog/ntlmv1-multi.git /opt/tools/ntlmv1-multi
-git_clone_tool https://github.com/Greenwolf/ntlm_theft.git /opt/tools/ntlm_theft
-git_clone_tool https://github.com/shmilylty/OneForAll.git /opt/tools/OneForAll
-git_clone_tool https://github.com/AlmondOffSec/PassTheCert.git /opt/tools/PassTheCert
-git_clone_tool https://github.com/topotam/PetitPotam.git /opt/tools/PetitPotam
-git_clone_tool https://github.com/dirkjanm/PKINITtools.git /opt/tools/PKINITtools
-git_clone_tool https://github.com/Wh1t3Fox/polenum.git /opt/tools/polenum
-git_clone_tool https://github.com/Hackndo/pyGPOAbuse.git /opt/tools/pyGPOAbuse
-git_clone_tool https://github.com/p0dalirius/pyLAPS.git /opt/tools/pyLAPS
-git_clone_tool https://github.com/GoSecure/pywsus.git /opt/tools/pywsus
-git_clone_tool https://github.com/lanmaster53/recon-ng.git /opt/tools/recon-ng
-git_clone_tool https://github.com/s0md3v/ReconDog.git /opt/tools/ReconDog
-git_clone_tool https://github.com/lgandx/Responder.git /opt/tools/Responder
-git_clone_tool https://github.com/xpn/sccmwtf.git /opt/tools/sccmwtf
-git_clone_tool https://github.com/synacktiv/SCCMSecrets.git /opt/tools/SCCMSecrets
-git_clone_tool https://github.com/pentestmonkey/smtp-user-enum.git /opt/tools/smtp-user-enum
-git_clone_tool https://github.com/defparam/smuggler.git /opt/tools/smuggler
-git_clone_tool https://github.com/smicallef/spiderfoot.git /opt/tools/spiderfoot
-git_clone_tool https://github.com/swisskyrepo/SSRFmap.git /opt/tools/SSRFmap
-git_clone_tool https://github.com/testssl/testssl.sh.git /opt/tools/testssl.sh
-git_clone_tool https://github.com/frohoff/ysoserial.git /opt/tools/ysoserial
-git_clone_tool https://github.com/SecuraBV/CVE-2020-1472.git /opt/tools/CVE-2020-1472-ZeroLogon
-git_clone_tool https://github.com/s0md3v/Photon.git /opt/tools/Photon
-git_clone_tool https://github.com/synacktiv/php_filter_chain_generator.git /opt/tools/php_filter_chain_generator
-install_massdns
-git_clone_tool https://github.com/tomfieber/hunter.git /opt/tools/hunter
+# Install Rust tools
+if command_exists cargo; then
+    log_info "Installing Rust tools"
+    if [ -f "$HOME/.cargo/env" ]; then
+        source "$HOME/.cargo/env"
+    fi
+    
+    install_rust feroxbuster 
+    install_rust rustscan    
+else
+    log_warning "Cargo not available - skipping Rust tools"
+fi    
+
+# Install evil-winrm
+install_gem evil-winrm 
+
+# Install XSpear
+install_gem XSpear
+
+# Install GitHub-based tools only if --github-tools flag is provided
+if [ "$INSTALL_GITHUB_TOOLS" = true ]; then
+    log_info "Installing GitHub-based tools (--github-tools flag detected)"
+    log_info "Cloning various tools into /opt/tools"
+    
+    # git_clone_tool https://github.com/openwall/john.git /opt/tools/john
+    # cd /opt/tools/john/src
+    # ./configure && make -j$(nproc)
+    # sudo make install
+    
+    git_clone_tool https://github.com/dolevf/graphql-cop.git /opt/tools/graphql-cop
+    git_clone_tool https://github.com/dirkjanm/krbrelayx.git /opt/tools/krbrelayx
+    git_clone_tool https://github.com/micahvandeusen/gMSADumper.git /opt/tools/gMSADumper
+    git_clone_tool https://github.com/zyn3rgy/LdapRelayScan.git /opt/tools/ldaprelayscan
+    git_clone_tool https://github.com/bats3c/darkarmour.git /opt/tools/DarkAmour 
+    git_clone_tool https://github.com/m0rtem/CloudFail.git /opt/tools/CloudFail
+    git_clone_tool https://github.com/Ridter/noPac.git /opt/tools/noPac
+    git_clone_tool https://github.com/evilmog/ntlmv1-multi.git /opt/tools/ntlmv1-multi
+    git_clone_tool https://github.com/Greenwolf/ntlm_theft.git /opt/tools/ntlm_theft
+    git_clone_tool https://github.com/shmilylty/OneForAll.git /opt/tools/OneForAll
+    git_clone_tool https://github.com/AlmondOffSec/PassTheCert.git /opt/tools/PassTheCert
+    git_clone_tool https://github.com/topotam/PetitPotam.git /opt/tools/PetitPotam
+    git_clone_tool https://github.com/dirkjanm/PKINITtools.git /opt/tools/PKINITtools
+    git_clone_tool https://github.com/Wh1t3Fox/polenum.git /opt/tools/polenum
+    git_clone_tool https://github.com/Hackndo/pyGPOAbuse.git /opt/tools/pyGPOAbuse
+    git_clone_tool https://github.com/p0dalirius/pyLAPS.git /opt/tools/pyLAPS
+    git_clone_tool https://github.com/GoSecure/pywsus.git /opt/tools/pywsus
+    git_clone_tool https://github.com/lanmaster53/recon-ng.git /opt/tools/recon-ng
+    git_clone_tool https://github.com/s0md3v/ReconDog.git /opt/tools/ReconDog
+    git_clone_tool https://github.com/lgandx/Responder.git /opt/tools/Responder
+    git_clone_tool https://github.com/xpn/sccmwtf.git /opt/tools/sccmwtf
+    git_clone_tool https://github.com/synacktiv/SCCMSecrets.git /opt/tools/SCCMSecrets
+    git_clone_tool https://github.com/pentestmonkey/smtp-user-enum.git /opt/tools/smtp-user-enum
+    git_clone_tool https://github.com/defparam/smuggler.git /opt/tools/smuggler
+    git_clone_tool https://github.com/smicallef/spiderfoot.git /opt/tools/spiderfoot
+    git_clone_tool https://github.com/swisskyrepo/SSRFmap.git /opt/tools/SSRFmap
+    git_clone_tool https://github.com/testssl/testssl.sh.git /opt/tools/testssl.sh
+    git_clone_tool https://github.com/frohoff/ysoserial.git /opt/tools/ysoserial
+    git_clone_tool https://github.com/SecuraBV/CVE-2020-1472.git /opt/tools/CVE-2020-1472-ZeroLogon
+    git_clone_tool https://github.com/s0md3v/Photon.git /opt/tools/Photon
+    git_clone_tool https://github.com/synacktiv/php_filter_chain_generator.git /opt/tools/php_filter_chain_generator
+    install_massdns
+    git_clone_tool https://github.com/tomfieber/hunter.git /opt/tools/hunter
+else
+    log_info "Skipping GitHub-based tools (use --github-tools flag to install them)"
+    SKIPPED_INSTALLS+=("GitHub tools (--github-tools not specified)")
+fi
 
 # Install Go tools
 if command_exists go; then
@@ -649,6 +681,11 @@ print_summary() {
     echo "=========================================="
     echo "         INSTALLATION SUMMARY"
     echo "=========================================="
+    
+    # Show configuration
+    echo "Configuration:"
+    echo "  GitHub tools: $([ "$INSTALL_GITHUB_TOOLS" = true ] && echo "✅ Enabled" || echo "❌ Disabled (use --github-tools to enable)")"
+    echo ""
     
     if [ ${#SUCCESSFUL_INSTALLS[@]} -gt 0 ]; then
         echo -e "${GREEN}Successfully installed (${#SUCCESSFUL_INSTALLS[@]}):${NC}"
