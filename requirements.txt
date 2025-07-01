@@ -1,6 +1,5 @@
 jq
-golang
-rustup
+zsh
 pipx
 curl
 wget
@@ -10,7 +9,7 @@ build-essential
 autoconf
 automake
 direnv
-nmap
+forensics-all
 python3-requests
 python3-pkg-resources
 wfuzz

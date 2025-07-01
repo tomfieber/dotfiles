@@ -255,6 +255,181 @@ setup_python_env() {
     fi
 }
 
+# Go installation
+setup_go() {
+    if command_exists go; then
+        local current_version
+        current_version="$(go version | awk '{print $3}' | sed 's/go//')"
+        log_info "Go already installed (version $current_version)"
+        SKIPPED_OPERATIONS+=("Go (already installed - $current_version)")
+        return 0
+    fi
+    
+    show_progress "Installing" "Go (latest version)"
+    log_info "Installing Go"
+    
+    # Detect architecture
+    local arch
+    case "$(uname -m)" in
+        x86_64) arch="amd64" ;;
+        aarch64|arm64) arch="arm64" ;;
+        armv6l) arch="armv6l" ;;
+        armv7l) arch="armv7l" ;;
+        i386) arch="386" ;;
+        *) 
+            log_error "Unsupported architecture: $(uname -m)"
+            FAILED_OPERATIONS+=("Go (unsupported architecture)")
+            return 1
+            ;;
+    esac
+    
+    # Detect OS
+    local os
+    case "$(uname -s)" in
+        Linux) os="linux" ;;
+        Darwin) os="darwin" ;;
+        *) 
+            log_error "Unsupported OS: $(uname -s)"
+            FAILED_OPERATIONS+=("Go (unsupported OS)")
+            return 1
+            ;;
+    esac
+    
+    # Get latest Go version
+    local latest_version
+    if ! latest_version="$(curl -sSfL 'https://go.dev/VERSION?m=text' 2>>"$LOG_FILE")"; then
+        log_error "Failed to fetch latest Go version"
+        FAILED_OPERATIONS+=("Go (version fetch failed)")
+        return 1
+    fi
+    
+    local download_url="https://go.dev/dl/${latest_version}.${os}-${arch}.tar.gz"
+    local temp_dir="/tmp/go-install"
+    
+    # Create temporary directory
+    mkdir -p "$temp_dir"
+    
+    # Download Go
+    log_info "Downloading Go $latest_version for $os-$arch"
+    if ! curl -sSfL "$download_url" -o "$temp_dir/go.tar.gz" 2>>"$LOG_FILE"; then
+        log_error "Failed to download Go"
+        FAILED_OPERATIONS+=("Go (download failed)")
+        rm -rf "$temp_dir"
+        return 1
+    fi
+    
+    # Remove existing Go installation
+    if [[ -d "/usr/local/go" ]]; then
+        log_info "Removing existing Go installation"
+        sudo rm -rf /usr/local/go
+    fi
+    
+    # Extract and install Go
+    log_info "Installing Go to /usr/local/go"
+    if sudo tar -C /usr/local -xzf "$temp_dir/go.tar.gz" 2>>"$LOG_FILE"; then
+        # Update shell profile
+        local shell_profile=""
+        case "$(basename "$SHELL")" in
+            "zsh") shell_profile="$HOME/.zshrc" ;;
+            "bash") shell_profile="$HOME/.bashrc" ;;
+            *) shell_profile="$HOME/.profile" ;;
+        esac
+        
+        # Add Go to PATH in shell profile
+        if [[ -f "$shell_profile" ]] && ! grep -q "/usr/local/go/bin" "$shell_profile"; then
+            echo "" >> "$shell_profile"
+            echo "# Go installation" >> "$shell_profile"
+            echo 'export PATH="/usr/local/go/bin:$PATH"' >> "$shell_profile"
+            echo 'export GOPATH="$HOME/go"' >> "$shell_profile"
+            echo 'export PATH="$GOPATH/bin:$PATH"' >> "$shell_profile"
+            log_info "Added Go to PATH in $shell_profile"
+        fi
+        
+        # Update PATH for current session
+        export PATH="/usr/local/go/bin:$PATH"
+        export GOPATH="$HOME/go"
+        export PATH="$GOPATH/bin:$PATH"
+        
+        # Create GOPATH directory
+        mkdir -p "$GOPATH/bin"
+        
+        show_success "Go ($latest_version)"
+        SUCCESSFUL_OPERATIONS+=("Go ($latest_version)")
+    else
+        show_error "Go"
+        FAILED_OPERATIONS+=("Go (extraction failed)")
+        rm -rf "$temp_dir"
+        return 1
+    fi
+    
+    # Cleanup
+    rm -rf "$temp_dir"
+}
+
+# Rust/Rustup installation and setup
+setup_rust() {
+    if command_exists rustc && command_exists cargo; then
+        local current_version
+        current_version="$(rustc --version | awk '{print $2}')"
+        log_info "Rust already installed (version $current_version)"
+        SKIPPED_OPERATIONS+=("Rust (already installed - $current_version)")
+        return 0
+    fi
+    
+    show_progress "Installing" "Rust (latest stable)"
+    log_info "Installing Rust via rustup"
+    
+    # Download and run rustup installer
+    if curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable 2>>"$LOG_FILE"; then
+        # Source cargo environment
+        if [[ -f "$HOME/.cargo/env" ]]; then
+            source "$HOME/.cargo/env"
+        fi
+        
+        # Update shell profile
+        local shell_profile=""
+        case "$(basename "$SHELL")" in
+            "zsh") shell_profile="$HOME/.zshrc" ;;
+            "bash") shell_profile="$HOME/.bashrc" ;;
+            *) shell_profile="$HOME/.profile" ;;
+        esac
+        
+        # Add Rust to PATH in shell profile
+        if [[ -f "$shell_profile" ]] && ! grep -q "\.cargo/env" "$shell_profile"; then
+            echo "" >> "$shell_profile"
+            echo "# Rust installation" >> "$shell_profile"
+            echo 'source "$HOME/.cargo/env"' >> "$shell_profile"
+            log_info "Added Rust to PATH in $shell_profile"
+        fi
+        
+        # Update PATH for current session
+        export PATH="$HOME/.cargo/bin:$PATH"
+        
+        # Install additional components
+        log_info "Installing Rust components"
+        if command_exists rustup; then
+            rustup component add clippy rustfmt 2>>"$LOG_FILE" || log_warning "Failed to install some Rust components"
+            
+            # Update to latest stable
+            rustup update stable 2>>"$LOG_FILE" || log_warning "Failed to update Rust"
+        fi
+        
+        local rust_version
+        if command_exists rustc; then
+            rust_version="$(rustc --version | awk '{print $2}')"
+            show_success "Rust ($rust_version)"
+            SUCCESSFUL_OPERATIONS+=("Rust ($rust_version)")
+        else
+            show_success "Rust"
+            SUCCESSFUL_OPERATIONS+=("Rust")
+        fi
+    else
+        show_error "Rust"
+        FAILED_OPERATIONS+=("Rust")
+        return 1
+    fi
+}
+
 # Go tools installation
 setup_go_tools() {
     if ! command_exists go; then
@@ -351,8 +526,8 @@ deploy_configuration() {
                 mkdir -p "$theme_dir"
                 copy_with_backup "$SCRIPT_DIR/th0m12.zsh-theme" "$theme_dir/th0m12.zsh-theme" "ZSH theme"
             else
-                log_warning "Oh My Zsh not found, skipping theme installation"
-                SKIPPED_OPERATIONS+=("ZSH theme (Oh My Zsh not installed)")
+                log_warning "Oh My Zsh not found, this shouldn't happen if setup ran correctly"
+                SKIPPED_OPERATIONS+=("ZSH theme (Oh My Zsh not found)")
             fi
             ;;
         "bash")
@@ -402,6 +577,7 @@ update_path() {
         "$HOME/.pdtm/go/bin"
         "$HOME/.asdf/bin"
         "$HOME/.pyenv/bin"
+        "$HOME/.cargo/bin"
     )
     
     for path in "${new_paths[@]}"; do
@@ -412,6 +588,46 @@ update_path() {
     done
     
     SUCCESSFUL_OPERATIONS+=("PATH update")
+}
+
+# Oh My Zsh installation
+setup_oh_my_zsh() {
+    # Only install if using zsh shell
+    local current_shell
+    current_shell="$(basename "$SHELL")"
+    
+    if [[ "$current_shell" != "zsh" ]]; then
+        log_info "Not using ZSH shell, skipping Oh My Zsh installation"
+        SKIPPED_OPERATIONS+=("Oh My Zsh (not using ZSH)")
+        return 0
+    fi
+    
+    # Check if Oh My Zsh is already installed
+    if [[ -d "$HOME/.oh-my-zsh" ]]; then
+        log_info "Oh My Zsh already installed"
+        SKIPPED_OPERATIONS+=("Oh My Zsh (already installed)")
+        return 0
+    fi
+    
+    show_progress "Installing" "Oh My Zsh"
+    log_info "Installing Oh My Zsh"
+    
+    # Download and install Oh My Zsh
+    # Use unattended installation to avoid interactive prompts
+    if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended 2>>"$LOG_FILE"; then
+        show_success "Oh My Zsh"
+        SUCCESSFUL_OPERATIONS+=("Oh My Zsh")
+        
+        # Backup the default .zshrc created by Oh My Zsh since we'll overwrite it
+        if [[ -f "$HOME/.zshrc" ]]; then
+            cp "$HOME/.zshrc" "$HOME/.zshrc.omz-default.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+            log_info "Backed up Oh My Zsh default .zshrc"
+        fi
+    else
+        show_error "Oh My Zsh"
+        FAILED_OPERATIONS+=("Oh My Zsh")
+        return 1
+    fi
 }
 
 # Main execution
@@ -425,8 +641,11 @@ main() {
     setup_directories
     setup_user_groups
     setup_python_env
+    setup_go
+    setup_rust
     setup_go_tools
     setup_nodejs
+    setup_oh_my_zsh
     deploy_configuration
     setup_system_config
     update_path

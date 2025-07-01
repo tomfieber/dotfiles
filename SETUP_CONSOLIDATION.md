@@ -11,12 +11,15 @@ I've consolidated `initial_setup.sh` and `configuration_files.sh` into a single,
 - ✅ Directory creation and permissions setup  
 - ✅ User group management (docker, sudo)
 - ✅ pyenv installation and configuration
-- ✅ Go tools installation (asdf)
+- ✅ Go installation (latest version with architecture detection)
+- ✅ Rust/Rustup installation (latest stable with components)
+- ✅ Go tools installation (asdf, pdtm)
 - ✅ System configuration (sysctl for arsenal)
 
 ### From `configuration_files.sh`:
 - ✅ Configuration file copying with backup
 - ✅ Shell detection (zsh/bash) and appropriate config deployment
+- ✅ Oh My Zsh installation and theme deployment (ZSH users)
 - ✅ asdf and Node.js setup
 - ✅ npm package installation
 - ✅ pdtm installation and initialization
@@ -64,6 +67,18 @@ I've consolidated `initial_setup.sh` and `configuration_files.sh` into a single,
 - **Phase-based execution**: Logical separation of setup phases
 - **Conditional execution**: Skip phases based on command line arguments
 - **Dependency checking**: Verifies tools exist before using them
+
+### 6. **Latest Version Installation**
+- **Go**: Automatically fetches and installs the latest Go version
+  - Multi-architecture support (amd64, arm64, armv6l, armv7l, i386)
+  - Multi-platform support (Linux, macOS)
+  - Automatic GOPATH setup and PATH configuration
+  - Shell profile integration
+- **Rust**: Installs latest stable Rust via rustup
+  - Includes essential components (clippy, rustfmt)
+  - Automatic PATH configuration
+  - Shell profile integration
+  - Keeps toolchain up to date
 
 ## 📊 **Benefits of Consolidation**
 
@@ -142,11 +157,14 @@ zsh/
 2. **Directory Setup**: Create and configure directories
 3. **User Groups**: Add user to necessary groups
 4. **Python Environment**: Install and configure pyenv
-5. **Go Tools**: Install Go-based tools (asdf, pdtm)
-6. **Node.js Environment**: Setup Node.js and npm packages
-7. **Configuration Deployment**: Copy and configure shell files
-8. **System Configuration**: Apply system-level settings
-9. **PATH Update**: Update current session PATH
+5. **Go Installation**: Install latest Go version with architecture detection
+6. **Rust Installation**: Install latest Rust/Rustup with components (clippy, rustfmt)
+7. **Go Tools**: Install Go-based tools (asdf, pdtm)
+8. **Node.js Environment**: Setup Node.js and npm packages
+9. **Oh My Zsh Installation**: Install Oh My Zsh framework (ZSH users only)
+10. **Configuration Deployment**: Copy and configure shell files
+11. **System Configuration**: Apply system-level settings
+12. **PATH Update**: Update current session PATH
 
 ## 🔍 **Error Recovery**
 
