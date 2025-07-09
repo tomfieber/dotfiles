@@ -565,3 +565,979 @@ function get_ports() {
     echo
     echo "📊 Found $port_count ports total"
 }
+
+autoload -Uz colors && colors
+
+# Helper function to validate IP addresses
+validate_ip() {
+    local ip=$1
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Helper function to validate port numbers
+validate_port() {
+    local port=$1
+    if [[ $port =~ ^[0-9]+$ ]] && [[ $port -ge 1 ]] && [[ $port -le 65535 ]]; then
+        return 0
+    fi
+    return 1
+}
+
+function ligolo    echo
+    echo "✅ Project directory '$dirname' created successfully!"
+    echo "📋 Assessment Type: $assessment_name"
+    echo "📍 Current location: $(pwd)"
+    echo "🌐 Target IP: ${final_ip:-"Not set"}"
+    echo "🏠 Host IP: ${final_lhost:-"Not set"}"() {
+    # Get VPN interface and IP with better error handling
+    local interface
+    interface="$(ip tuntap show 2>/dev/null | grep -v ligolo | cut -d : -f1 | head -n 1)"
+    
+    if [[ -z "$interface" ]]; then
+        echo "❌ Error: No VPN interface found. Are you connected to a VPN?" >&2
+        return 1
+    fi
+    
+    local ip
+    ip="$(ip a s "${interface}" 2>/dev/null | grep -o -P '(?<=inet )[0-9]{1,3}(\.[0-9]{1,3}){3}' | head -n 1)"
+    
+    if [[ -z "$ip" ]]; then
+        echo "❌ Error: Could not determine IP address for interface ${interface}" >&2
+        return 1
+    fi
+    
+    # Get user input with validation
+    echo "Name of the user to add (Enter for current user): "
+    read NAME
+    local final_name=${NAME:-$USER}
+    
+    # Validate username
+    if [[ ! "$final_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "❌ Error: Invalid username. Use only alphanumeric characters, hyphens, and underscores." >&2
+        return 1
+    fi
+    
+    echo "Port to listen on (Enter for default port 11601): "
+    read PORT
+    local final_port=${PORT:-11601}
+    
+    # Validate port
+    if ! validate_port "$final_port"; then
+        echo "❌ Error: Invalid port number. Must be between 1-65535." >&2
+        return 1
+    fi
+    
+    # Check if ligolo interface already exists
+    if ip link show ligolo >/dev/null 2>&1; then
+        echo "⚠️  Warning: ligolo interface already exists. Removing first..."
+        sudo ip link delete ligolo 2>/dev/null
+    fi
+    
+    # Create tunnel interface - removed eval for security
+    echo "🔧 Creating ligolo tunnel interface..."
+    if ! sudo ip tuntap add user "$final_name" mode tun ligolo; then
+        echo "❌ Error: Failed to create ligolo interface" >&2
+        return 1
+    fi
+    
+    if ! sudo ip link set ligolo up; then
+        echo "❌ Error: Failed to bring up ligolo interface" >&2
+        return 1
+    fi
+    
+    # Check if ligolo-ng proxy exists
+    local proxy_path="/opt/tools/ligolo-ng/proxy"
+    if [[ ! -x "$proxy_path" ]]; then
+        echo "❌ Error: ligolo-ng proxy not found at $proxy_path" >&2
+        echo "   Please install ligolo-ng first" >&2
+        return 1
+    fi
+    
+    echo
+    print -- $fg_bold[green]✅ Ligolo interface created successfully!$reset_color
+    print -- $fg_bold[green]📡 Use the following commands to connect back to the server:$reset_color
+    echo
+    echo "==Windows=="
+    echo "Start-Process -FilePath 'C:\\Windows\\Tasks\\agent.exe' -ArgumentList '-connect','${ip}:${final_port}','-ignore-cert'"
+    echo
+    echo "==Linux=="
+    echo "nohup ./agent -connect ${ip}:${final_port} -ignore-cert &"
+    echo
+    echo "🚀 Starting ligolo-ng proxy on ${ip}:${final_port}..."
+    
+    # Start proxy - removed eval for security
+    "$proxy_path" -laddr "0.0.0.0:${final_port}" -selfcert
+}
+
+function add-ligolo-route() {
+    echo "Enter the range to add (e.g., 192.168.1.0/24): "
+    read range
+    
+    # Validate CIDR notation
+    if [[ ! "$range" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+        echo "❌ Error: Invalid CIDR notation. Example: 192.168.1.0/24" >&2
+        return 1
+    fi
+    
+    # Check if ligolo interface exists
+    if ! ip link show ligolo >/dev/null 2>&1; then
+        echo "❌ Error: ligolo interface not found. Run ligolo-setup first." >&2
+        return 1
+    fi
+    
+    # Add route with error checking
+    if sudo ip route add "$range" dev ligolo; then
+        echo "✅ Route added successfully: $range via ligolo"
+        echo "📋 Current ligolo routes:"
+        ip route show dev ligolo 2>/dev/null || echo "No routes found"
+    else
+        echo "❌ Error: Failed to add route $range" >&2
+        return 1
+    fi
+}
+
+function createdir() {
+    # Prompt for assessment type
+    echo "Select the assessment type:"
+    echo "1) External Network Test"
+    echo "2) Internal Network Test" 
+    echo "3) Web Application Test"
+    echo -n "Enter your choice (1-3): "
+    read assessment_type
+    
+    # Validate assessment type
+    if [[ ! "$assessment_type" =~ ^[1-3]$ ]]; then
+        echo "❌ Error: Invalid assessment type. Please enter 1, 2, or 3." >&2
+        return 1
+    fi
+    
+    # Define note templates based on assessment type
+    local note_files=()
+    local assessment_name=""
+    local dir_structure=""
+    
+    case $assessment_type in
+        1) # External Network Test
+            assessment_name="External Network Test"
+            note_files=() # Will be created separately with the new structure
+            dir_structure="External"
+            ;;
+        2) # Internal Network Test
+            assessment_name="Internal Network Test"
+            note_files=() # Will be created separately with the new structure
+            dir_structure="Internal"
+            ;;
+        3) # Web Application Test
+            assessment_name="Web Application Test"
+            note_files=(
+                "1. Administrative Information.md"
+                "2. Scoping Information.md"
+                "3. Activity Log.md"
+                "4. Application Overview.md"
+                "5. Authentication Testing.md"
+                "6. Authorization Testing.md"
+                "7. Input Validation.md"
+                "8. Session Management.md"
+                "9. Business Logic.md"
+                "10. Client-Side Testing.md"
+                "11. API Testing.md"
+                "12. Findings.md"
+            )
+            dir_structure="WebApp"
+            ;;
+    esac
+    
+    echo "Enter a name for the directory: "
+    read NAME
+    local dirname=${NAME:-newdir}
+    
+    # Validate directory name
+    if [[ ! "$dirname" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+        echo "❌ Error: Invalid directory name. Use only alphanumeric characters, dots, hyphens, and underscores." >&2
+        return 1
+    fi
+    
+    # Check if directory already exists
+    if [[ -d "$dirname" ]]; then
+        echo "⚠️  Warning: Directory '$dirname' already exists."
+        echo "Do you want to continue and potentially overwrite files? (y/N): "
+        read confirmation
+        if [[ ! "$confirmation" =~ ^[Yy]$ ]]; then
+            echo "Operation cancelled."
+            return 0
+        fi
+    fi
+    
+    echo "Enter an IP if there is one (useful for labs): "
+    read IP
+    local final_ip=${IP:-""}
+    
+    # Validate IP if provided
+    if [[ -n "$final_ip" ]] && ! validate_ip "$final_ip"; then
+        echo "❌ Error: Invalid IP address format" >&2
+        return 1
+    fi
+    
+    echo "Enter a HOST IP (e.g., a tun0 VPN IP): "
+    read LHOST
+    local final_lhost=${LHOST:-""}
+    
+    # Validate LHOST if provided
+    if [[ -n "$final_lhost" ]] && ! validate_ip "$final_lhost"; then
+        echo "❌ Error: Invalid HOST IP address format" >&2
+        return 1
+    fi
+    
+    # Create directory structure
+    echo "📁 Creating directory structure for $assessment_name..."
+    if ! mkdir -p "$dirname"; then
+        echo "❌ Error: Failed to create directory '$dirname'" >&2
+        return 1
+    fi
+    
+    cd "$dirname" || {
+        echo "❌ Error: Failed to change to directory '$dirname'" >&2
+        return 1
+    }
+    
+    # Create subdirectories based on assessment type
+    case $assessment_type in
+        1) # External Network Test - Custom structure
+            if ! mkdir -p \
+                "01-Admin" \
+                "02-Data" \
+                "03-Evidence"/{1-Notes/{1-OSINT,2-Hostname\ Enumeration,3-Scans/{1-Port\ Scans,2-Vuln\ Scans},4-Services,5-Web\ App\ Testing},2-Findings,3-Logging_Ouput,4-Misc.\ Files,5-Screenshots} \
+                "04-Retest"; then
+                echo "❌ Error: Failed to create subdirectories" >&2
+                return 1
+            fi
+            ;;
+        2) # Internal Network Test - Custom structure
+            if ! mkdir -p \
+                "01-Admin" \
+                "02-Data" \
+                "03-Evidence"/{1-Notes/{1-Unauthenticated/{01-Unauth\ SMB,02-Unauth\ LDAP,03-Unauth\ Vulns},2-SMB/01-Manspider,3-LDAP,4-Poisoning,5-User\ Compromise,6-ADCS,7-Machine\ Compromise,8-MSSQL,9-Internal\ Services,10-Internal\ Web\ Services},2-Findings,3-Logging\ Output,4-Misc.\ Files,5-Screenshots} \
+                "04-Retest"; then
+                echo "❌ Error: Failed to create subdirectories" >&2
+                return 1
+            fi
+            ;;
+        3) # Web Application Test
+            if ! mkdir -p "01-Admin" "02-OSINT" "03-Evidence"/{Findings,"Logging output","Misc files",Notes,Screenshots} "03-Evidence/Scans"/{Web\ Scans,API\ Testing,Burp\ Output} "03-Evidence/Tools"/{Burp\ Project,Custom\ Scripts} "04-Retest"; then
+                echo "❌ Error: Failed to create subdirectories" >&2
+                return 1
+            fi
+            ;;
+    esac
+    
+    # Create note files with headers and assessment-specific content
+    echo "📝 Creating note files..."
+    local failed_files=()
+    
+    if [[ $assessment_type -eq 1 ]]; then
+        # External Network Test - Custom structure
+        
+        # 01-Admin files
+        local admin_files=(
+            "1-Admin Information.md"
+            "2-Scope.md"
+            "3-Questions.md"
+            "4-Clean-Up.md"
+            "5-TODO.md"
+        )
+        
+        for file in "${admin_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Admin Information.md")
+                    content+="## Project Details\n- **Assessment Type:** $assessment_name\n- **Start Date:** $(date +%Y-%m-%d)\n- **Target:** ${final_ip:-"TBD"}\n- **Tester:** $USER\n\n## Contacts\n- **Primary Contact:** \n- **Technical Contact:** \n- **Emergency Contact:** \n\n## Timeline\n- **Start Date:** \n- **End Date:** \n- **Report Due Date:** \n"
+                    ;;
+                "2-Scope.md")
+                    content+="## External Network Scope\n- **External IP Ranges:** \n- **Domains:** \n- **Excluded Systems:** \n- **Testing Methods Approved:** \n  - [ ] Port Scanning\n  - [ ] Vulnerability Scanning\n  - [ ] Web Application Testing\n  - [ ] Social Engineering (if applicable)\n\n## Rules of Engagement\n- **Testing Hours:** \n- **Emergency Contact:** \n- **Notification Requirements:** \n"
+                    ;;
+                "3-Questions.md")
+                    content+="## Client Questions\n\n### Technical Questions\n- [ ] What is the expected network architecture?\n- [ ] Are there any maintenance windows?\n- [ ] What monitoring systems are in place?\n\n### Business Questions\n- [ ] What are the critical business systems?\n- [ ] What would constitute a critical finding?\n- [ ] Who should be notified of critical findings?\n\n### Scope Clarifications\n- [ ] Are cloud services in scope?\n- [ ] Are third-party integrations included?\n- [ ] What about partner networks?\n"
+                    ;;
+                "4-Clean-Up.md")
+                    content+="## Clean-Up Activities\n\n### Files to Remove\n- [ ] Uploaded tools/scripts\n- [ ] Temporary files\n- [ ] Test accounts created\n\n### System Changes to Revert\n- [ ] Configuration changes\n- [ ] User account modifications\n- [ ] Network configuration changes\n\n### Evidence Collection\n- [ ] Screenshots collected\n- [ ] Logs exported\n- [ ] Scan results archived\n"
+                    ;;
+                "5-TODO.md")
+                    content+="## TODO List\n\n### Pre-Engagement\n- [ ] Finalize scope\n- [ ] Set up testing environment\n- [ ] Prepare tools\n\n### Testing Phase\n- [ ] OSINT gathering\n- [ ] Hostname enumeration\n- [ ] Port scanning\n- [ ] Vulnerability assessment\n- [ ] Service enumeration\n- [ ] Web application testing\n\n### Post-Engagement\n- [ ] Clean up\n- [ ] Report writing\n- [ ] Client presentation\n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "01-Admin/$file"; then
+                failed_files+=("01-Admin/$file")
+            fi
+        done
+        
+        # 02-Data files
+        local data_files=(
+            "1-Users List.md"
+            "2-Listening Services.md"
+            "3-Count of Listening Service.md"
+        )
+        
+        for file in "${data_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Users List.md")
+                    content+="## Discovered Users\n\n| Username | Source | Email | Notes |\n|----------|--------|-------|-------|\n|          |        |       |       |\n\n## User Enumeration Methods\n- [ ] OSINT\n- [ ] Email harvesting\n- [ ] LinkedIn\n- [ ] Company website\n- [ ] Breach databases\n"
+                    ;;
+                "2-Listening Services.md")
+                    content+="## Listening Services\n\n| Host | Port | Protocol | Service | Version | Notes |\n|------|------|----------|---------|---------|-------|\n|      |      |          |         |         |       |\n\n## Service Categories\n### Web Services\n- \n\n### Database Services\n- \n\n### Remote Access\n- \n\n### Other Services\n- \n"
+                    ;;
+                "3-Count of Listening Service.md")
+                    content+="## Service Count Summary\n\n### By Protocol\n- **HTTP/HTTPS:** 0\n- **SSH:** 0\n- **FTP:** 0\n- **SMB:** 0\n- **Database:** 0\n- **Email:** 0\n- **DNS:** 0\n- **Other:** 0\n\n### By Risk Level\n- **Critical:** 0\n- **High:** 0\n- **Medium:** 0\n- **Low:** 0\n- **Info:** 0\n\n### Total Unique Services: 0\n### Total Open Ports: 0\n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "02-Data/$file"; then
+                failed_files+=("02-Data/$file")
+            fi
+        done
+        
+        # 03-Evidence/1-Notes files
+        
+        # OSINT files
+        local osint_files=(
+            "1-Repo Searching.md"
+            "2-Google Dorking.md"
+            "3-Username Enumeration.md"
+            "4-Shodan.md"
+            "5-Breach Searching.md"
+            "6-Exposed Buckets.md"
+            "7-Email Domain Security.md"
+        )
+        
+        for file in "${osint_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Repo Searching.md")
+                    content+="## GitHub Repository Search\n\n### Search Queries\n- \n\n### Findings\n- \n\n### Sensitive Information Found\n- [ ] API Keys\n- [ ] Passwords\n- [ ] Configuration files\n- [ ] Internal URLs\n"
+                    ;;
+                "2-Google Dorking.md")
+                    content+="## Google Dorking Results\n\n### Search Queries Used\n- site:target.com filetype:pdf\n- site:target.com inurl:admin\n- site:target.com \"confidential\"\n\n### Findings\n- \n\n### Exposed Information\n- [ ] Login pages\n- [ ] Directory listings\n- [ ] Error messages\n- [ ] Sensitive documents\n"
+                    ;;
+                "3-Username Enumeration.md")
+                    content+="## Username Enumeration\n\n### Sources\n- [ ] LinkedIn\n- [ ] Company website\n- [ ] Social media\n- [ ] Email signatures\n\n### Discovered Usernames\n- \n\n### Email Format\n- Pattern: \n- Confidence: \n"
+                    ;;
+                "4-Shodan.md")
+                    content+="## Shodan Results\n\n### Search Queries\n- \n\n### Exposed Services\n- \n\n### Banners and Versions\n- \n\n### Security Issues\n- [ ] Default credentials\n- [ ] Outdated versions\n- [ ] Exposed databases\n- [ ] Weak configurations\n"
+                    ;;
+                "5-Breach Searching.md")
+                    content+="## Data Breach Search\n\n### Sources Checked\n- [ ] HaveIBeenPwned\n- [ ] DeHashed\n- [ ] BreachDirectory\n- [ ] Snusbase\n\n### Discovered Breaches\n- \n\n### Credentials Found\n- \n\n### Password Patterns\n- \n"
+                    ;;
+                "6-Exposed Buckets.md")
+                    content+="## Cloud Storage Search\n\n### AWS S3 Buckets\n- \n\n### Azure Blob Storage\n- \n\n### Google Cloud Storage\n- \n\n### Findings\n- [ ] Publicly readable\n- [ ] Sensitive data\n- [ ] Backup files\n- [ ] Configuration files\n"
+                    ;;
+                "7-Email Domain Security.md")
+                    content+="## Email Security Assessment\n\n### SPF Record\n- Status: \n- Record: \n\n### DKIM\n- Status: \n- Selector: \n\n### DMARC\n- Status: \n- Policy: \n\n### MX Records\n- \n\n### Issues Identified\n- [ ] Missing SPF\n- [ ] Weak DMARC policy\n- [ ] No DKIM\n- [ ] Spoofing possible\n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/1-OSINT/$file"; then
+                failed_files+=("03-Evidence/1-Notes/1-OSINT/$file")
+            fi
+        done
+        
+        # Hostname Enumeration files
+        local hostname_files=(
+            "1-Manual Searching.md"
+            "2-Apex Domains.md"
+            "3-Hunter.md"
+            "4-Final Hostnames.md"
+        )
+        
+        for file in "${hostname_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Manual Searching.md")
+                    content+="## Manual Hostname Discovery\n\n### Methods Used\n- [ ] DNS brute force\n- [ ] Certificate transparency logs\n- [ ] Search engine discovery\n- [ ] Wayback machine\n\n### Discovered Hostnames\n- \n\n### Tools Used\n- \n"
+                    ;;
+                "2-Apex Domains.md")
+                    content+="## Apex Domain Analysis\n\n### Primary Domain\n- \n\n### Related Domains\n- \n\n### Subdomain Patterns\n- \n\n### DNS Records\n- A records: \n- CNAME records: \n- MX records: \n- TXT records: \n"
+                    ;;
+                "3-Hunter.md")
+                    content+="## Hunter.io Results\n\n### Email Patterns\n- \n\n### Confidence Score\n- \n\n### Discovered Emails\n- \n\n### Sources\n- \n\n### Additional Domains\n- \n"
+                    ;;
+                "4-Final Hostnames.md")
+                    content+="## Final Hostname List\n\n### In-Scope Hostnames\n- \n\n### Out-of-Scope\n- \n\n### Resolved IPs\n- \n\n### Total Count: 0\n\n### Next Steps\n- [ ] Port scanning\n- [ ] Service enumeration\n- [ ] Web application testing\n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/2-Hostname Enumeration/$file"; then
+                failed_files+=("03-Evidence/1-Notes/2-Hostname Enumeration/$file")
+            fi
+        done
+        
+        # Port Scan files
+        local port_scan_files=(
+            "1-Discovery.md"
+            "2-TCP.md"
+            "3-UDP.md"
+        )
+        
+        for file in "${port_scan_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Discovery.md")
+                    content+="## Host Discovery\n\n### Live Hosts\n- \n\n### Discovery Methods\n- [ ] Ping sweep\n- [ ] TCP SYN scan\n- [ ] UDP scan\n- [ ] ARP scan\n\n### Commands Used\n\`\`\`bash\n\n\`\`\`\n\n### Results Summary\n- Total hosts discovered: 0\n- Response time: \n- Filtered hosts: 0\n"
+                    ;;
+                "2-TCP.md")
+                    content+="## TCP Port Scanning\n\n### Scan Commands\n\`\`\`bash\n\n\`\`\`\n\n### Open Ports Summary\n- \n\n### Service Versions\n- \n\n### Notable Findings\n- \n\n### Next Steps\n- [ ] Service enumeration\n- [ ] Vulnerability scanning\n- [ ] Banner grabbing\n"
+                    ;;
+                "3-UDP.md")
+                    content+="## UDP Port Scanning\n\n### Scan Commands\n\`\`\`bash\n\n\`\`\`\n\n### Open UDP Ports\n- \n\n### Service Identification\n- \n\n### Common UDP Services Found\n- [ ] DNS (53)\n- [ ] DHCP (67/68)\n- [ ] SNMP (161)\n- [ ] NTP (123)\n\n### Security Implications\n- \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/3-Scans/1-Port Scans/$file"; then
+                failed_files+=("03-Evidence/1-Notes/3-Scans/1-Port Scans/$file")
+            fi
+        done
+        
+        # Vulnerability Scan files
+        local vuln_scan_files=(
+            "1-Nessus.md"
+            "2-Nuclei.md"
+            "3-TLS.md"
+        )
+        
+        for file in "${vuln_scan_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Nessus.md")
+                    content+="## Nessus Vulnerability Scan\n\n### Scan Configuration\n- Policy: \n- Scan time: \n- Targets: \n\n### Critical Findings\n- \n\n### High Risk Findings\n- \n\n### Medium Risk Findings\n- \n\n### Summary Statistics\n- Critical: 0\n- High: 0\n- Medium: 0\n- Low: 0\n- Info: 0\n"
+                    ;;
+                "2-Nuclei.md")
+                    content+="## Nuclei Vulnerability Scan\n\n### Templates Used\n- \n\n### Command Executed\n\`\`\`bash\n\n\`\`\`\n\n### Findings\n- \n\n### False Positives\n- \n\n### Verified Vulnerabilities\n- \n"
+                    ;;
+                "3-TLS.md")
+                    content+="## TLS/SSL Assessment\n\n### SSL/TLS Configuration\n- \n\n### Supported Protocols\n- [ ] TLS 1.3\n- [ ] TLS 1.2\n- [ ] TLS 1.1 (deprecated)\n- [ ] TLS 1.0 (deprecated)\n- [ ] SSL 3.0 (vulnerable)\n\n### Cipher Suites\n- Strong: \n- Weak: \n\n### Certificate Analysis\n- Issuer: \n- Expiration: \n- Algorithm: \n- Key size: \n\n### Vulnerabilities\n- [ ] Heartbleed\n- [ ] POODLE\n- [ ] BEAST\n- [ ] FREAK\n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/3-Scans/2-Vuln Scans/$file"; then
+                failed_files+=("03-Evidence/1-Notes/3-Scans/2-Vuln Scans/$file")
+            fi
+        done
+        
+        # Create placeholder files for 4-Services and 5-Web App Testing
+        echo -e "# Service Enumeration\n\n## Discovered Services\n- \n\n## Enumeration Results\n- \n" > "03-Evidence/1-Notes/4-Services/README.md"
+        echo -e "# Web Application Testing\n\n## Applications Discovered\n- \n\n## Testing Results\n- \n" > "03-Evidence/1-Notes/5-Web App Testing/README.md"
+        
+    elif [[ $assessment_type -eq 2 ]]; then
+        # Internal Network Test - Custom structure
+        
+        # 01-Admin files
+        local admin_files=(
+            "1-Admin Information.md"
+            "2-Scope.md"
+            "3-Questions.md"
+            "4-Clean-Up.md"
+            "5-TODO.md"
+            "6-Detections.md"
+        )
+        
+        for file in "${admin_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Admin Information.md")
+                    content+="## Project Details\n- **Assessment Type:** $assessment_name\n- **Start Date:** $(date +%Y-%m-%d)\n- **Target:** ${final_ip:-"TBD"}\n- **Tester:** $USER\n\n## Contacts\n- **Primary Contact:** \n- **Technical Contact:** \n- **Emergency Contact:** \n\n## Timeline\n- **Start Date:** \n- **End Date:** \n- **Report Due Date:** \n"
+                    ;;
+                "2-Scope.md")
+                    content+="## Internal Network Scope\n- **Network Ranges:** \n- **Domain:** \n- **Excluded Systems:** \n- **Testing Methods Approved:** \n  - [ ] Network Discovery\n  - [ ] Service Enumeration\n  - [ ] AD Enumeration\n  - [ ] Credential Attacks\n  - [ ] Lateral Movement\n  - [ ] Privilege Escalation\n\n## Rules of Engagement\n- **Testing Hours:** \n- **Emergency Contact:** \n- **Notification Requirements:** \n- **Domain Admin Scope:** \n"
+                    ;;
+                "3-Questions.md")
+                    content+="## Client Questions\n\n### Technical Questions\n- [ ] What is the domain structure?\n- [ ] Are there any monitoring solutions?\n- [ ] What critical systems exist?\n- [ ] Are there domain trusts?\n\n### Business Questions\n- [ ] What constitutes a critical finding?\n- [ ] Who should be notified of DA compromise?\n- [ ] What are the critical business hours?\n\n### Scope Clarifications\n- [ ] Are other domains in scope?\n- [ ] Can we test ADCS?\n- [ ] Is lateral movement allowed?\n"
+                    ;;
+                "4-Clean-Up.md")
+                    content+="## Clean-Up Activities\n\n### Files to Remove\n- [ ] Uploaded tools/scripts\n- [ ] Temporary files\n- [ ] Test accounts created\n- [ ] Malicious certificates\n\n### System Changes to Revert\n- [ ] User account modifications\n- [ ] Service account changes\n- [ ] ACL modifications\n- [ ] Group membership changes\n\n### Evidence Collection\n- [ ] Screenshots collected\n- [ ] Logs exported\n- [ ] BloodHound data archived\n- [ ] Credential dumps secured\n"
+                    ;;
+                "5-TODO.md")
+                    content+="## TODO List\n\n### Pre-Engagement\n- [ ] Finalize scope\n- [ ] Set up testing environment\n- [ ] Prepare tools (Responder, BloodHound, etc.)\n\n### Testing Phase\n- [ ] Unauthenticated enumeration\n- [ ] SMB enumeration\n- [ ] LDAP enumeration\n- [ ] Network poisoning\n- [ ] User compromise\n- [ ] Machine compromise\n- [ ] Domain privilege escalation\n\n### Post-Engagement\n- [ ] Clean up\n- [ ] Report writing\n- [ ] Client presentation\n"
+                    ;;
+                "6-Detections.md")
+                    content+="## Detection Events\n\n### Blue Team Alerts\n- [ ] Login alerts\n- [ ] Lateral movement detection\n- [ ] Credential dumping alerts\n- [ ] Kerberoasting detection\n\n### SOC Communications\n- **Primary SOC Contact:** \n- **Alert Escalation Process:** \n\n### Defensive Measures Observed\n- [ ] EDR solutions\n- [ ] Network monitoring\n- [ ] Privilege escalation detection\n- [ ] Anomalous authentication alerts\n\n### Evasion Techniques Used\n- \n\n### Blue Team Coordination\n- **Notification sent:** \n- **Testing authorized by:** \n- **Real-time communication method:** \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "01-Admin/$file"; then
+                failed_files+=("01-Admin/$file")
+            fi
+        done
+        
+        # 02-Data files
+        local data_files=(
+            "1-Users List.md"
+            "2-Listening Services.md"
+            "3-Count of Listening Services.md"
+            "4-Technology in Use.md"
+        )
+        
+        for file in "${data_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Users List.md")
+                    content+="## Discovered Users\n\n| Username | Domain | Email | Source | Privileges | Notes |\n|----------|--------|-------|--------|------------|-------|\n|          |        |       |        |            |       |\n\n## User Categories\n### Service Accounts\n- \n\n### Administrative Users\n- \n\n### Standard Users\n- \n\n## User Enumeration Methods\n- [ ] LDAP enumeration\n- [ ] RID cycling\n- [ ] Kerberos user enumeration\n- [ ] SMB share analysis\n"
+                    ;;
+                "2-Listening Services.md")
+                    content+="## Listening Services\n\n| Host | Port | Protocol | Service | Version | Domain | Notes |\n|------|------|----------|---------|---------|--------|-------|\n|      |      |          |         |         |        |       |\n\n## Service Categories\n### Domain Services\n- **Domain Controllers:** \n- **LDAP:** \n- **Kerberos:** \n- **DNS:** \n\n### File Services\n- **SMB Shares:** \n- **FTP:** \n- **NFS:** \n\n### Database Services\n- **MSSQL:** \n- **MySQL:** \n- **Oracle:** \n\n### Web Services\n- **IIS:** \n- **Apache:** \n- **Internal Web Apps:** \n"
+                    ;;
+                "3-Count of Listening Services.md")
+                    content+="## Service Count Summary\n\n### By Protocol\n- **SMB (445):** 0\n- **LDAP (389/636):** 0\n- **Kerberos (88):** 0\n- **DNS (53):** 0\n- **HTTP/HTTPS:** 0\n- **MSSQL (1433):** 0\n- **RDP (3389):** 0\n- **WinRM (5985/5986):** 0\n- **SSH (22):** 0\n\n### By Risk Level\n- **Critical:** 0\n- **High:** 0\n- **Medium:** 0\n- **Low:** 0\n- **Info:** 0\n\n### Domain Controllers: 0\n### Total Unique Services: 0\n### Total Open Ports: 0\n"
+                    ;;
+                "4-Technology in Use.md")
+                    content+="## Technology Stack\n\n### Operating Systems\n- **Windows Server versions:** \n- **Workstation versions:** \n- **Linux distributions:** \n\n### Active Directory\n- **Domain name:** \n- **Forest functional level:** \n- **Domain functional level:** \n- **Domain controllers:** \n\n### Security Solutions\n- **Antivirus/EDR:** \n- **SIEM:** \n- **Network monitoring:** \n- **Backup solutions:** \n\n### Infrastructure\n- **Virtualization:** \n- **Cloud services:** \n- **Network equipment:** \n- **Storage systems:** \n\n### Applications\n- **Email system:** \n- **Database platforms:** \n- **Web applications:** \n- **Business applications:** \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "02-Data/$file"; then
+                failed_files+=("02-Data/$file")
+            fi
+        done
+        
+        # 03-Evidence/1-Notes files - Unauthenticated section
+        
+        # Unauthenticated main files
+        local unauth_files=(
+            "1-Packet Capture.md"
+            "2-Responder Analyze.md"
+            "3-Email Domain Security.md"
+            "4-Find DCs.md"
+            "5-Breached Credentials.md"
+            "6-Host Discovery.md"
+            "7-Initial NetExec.md"
+        )
+        
+        for file in "${unauth_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Packet Capture.md")
+                    content+="## Network Traffic Analysis\n\n### Capture Details\n- **Interface:** \n- **Duration:** \n- **Filter:** \n\n### Protocols Observed\n- [ ] LLMNR\n- [ ] NetBIOS-NS\n- [ ] mDNS\n- [ ] DHCP\n- [ ] SMB\n- [ ] LDAP\n\n### Interesting Findings\n- \n\n### Credentials in Traffic\n- \n"
+                    ;;
+                "2-Responder Analyze.md")
+                    content+="## Responder Analysis\n\n### Responder Configuration\n- **Interface:** \n- **Protocols enabled:** \n\n### Captured Hashes\n- \n\n### Poisoning Events\n- \n\n### Analysis Results\n- **Successful attacks:** \n- **Failed attempts:** \n- **Systems vulnerable:** \n"
+                    ;;
+                "3-Email Domain Security.md")
+                    content+="## Email Security Assessment\n\n### SPF Record\n- **Status:** \n- **Record:** \n\n### DKIM\n- **Status:** \n- **Selector:** \n\n### DMARC\n- **Status:** \n- **Policy:** \n\n### Issues Identified\n- [ ] Missing SPF\n- [ ] Weak DMARC policy\n- [ ] No DKIM\n- [ ] Email spoofing possible\n"
+                    ;;
+                "4-Find DCs.md")
+                    content+="## Domain Controller Discovery\n\n### Discovery Methods\n- [ ] DNS SRV records\n- [ ] LDAP queries\n- [ ] NetBIOS queries\n- [ ] Network scanning\n\n### Discovered DCs\n- \n\n### DC Roles\n- **PDC Emulator:** \n- **Infrastructure Master:** \n- **RID Master:** \n- **Schema Master:** \n- **Domain Naming Master:** \n\n### DC Analysis\n- **OS versions:** \n- **Patch levels:** \n- **Exposed services:** \n"
+                    ;;
+                "5-Breached Credentials.md")
+                    content+="## Credential Breach Analysis\n\n### Sources Checked\n- [ ] HaveIBeenPwned\n- [ ] DeHashed\n- [ ] BreachDirectory\n- [ ] Snusbase\n\n### Domain-related Breaches\n- \n\n### Discovered Credentials\n- \n\n### Password Patterns\n- \n\n### Credential Validation\n- **Valid credentials:** \n- **Invalid credentials:** \n- **Expired accounts:** \n"
+                    ;;
+                "6-Host Discovery.md")
+                    content+="## Network Host Discovery\n\n### Discovery Methods\n- [ ] ARP scanning\n- [ ] Ping sweeps\n- [ ] TCP SYN scanning\n- [ ] UDP scanning\n\n### Live Hosts\n- **Total discovered:** 0\n- **Windows hosts:** 0\n- **Linux hosts:** 0\n- **Network devices:** 0\n\n### Host Categories\n### Domain Controllers\n- \n\n### Servers\n- \n\n### Workstations\n- \n\n### Network Infrastructure\n- \n"
+                    ;;
+                "7-Initial NetExec.md")
+                    content+="## Initial NetExec Enumeration\n\n### Commands Executed\n\`\`\`bash\n\n\`\`\`\n\n### Results Summary\n- **Accessible hosts:** 0\n- **SMB signing required:** 0\n- **SMB signing not required:** 0\n- **Guest access enabled:** 0\n\n### Notable Findings\n- \n\n### Next Steps\n- [ ] Detailed SMB enumeration\n- [ ] LDAP enumeration\n- [ ] Service-specific testing\n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/1-Unauthenticated/$file"; then
+                failed_files+=("03-Evidence/1-Notes/1-Unauthenticated/$file")
+            fi
+        done
+        
+        # Unauthenticated SMB files
+        local unauth_smb_files=(
+            "1-ZeroLogon.md"
+            "2-PrintNightmare.md"
+            "3-SMBGhost.md"
+            "4-Unauthenticated Coercion.md"
+        )
+        
+        for file in "${unauth_smb_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-ZeroLogon.md")
+                    content+="## ZeroLogon (CVE-2020-1472)\n\n### Target Assessment\n- **Domain controllers tested:** \n- **Vulnerable systems:** \n\n### Exploitation Results\n- **Successful:** \n- **Failed:** \n\n### Impact\n- **Domain compromise possible:** \n- **Machine account reset:** \n\n### Remediation\n- **Patches required:** \n- **Enforcement mode:** \n"
+                    ;;
+                "2-PrintNightmare.md")
+                    content+="## PrintNightmare (CVE-2021-1675/34527)\n\n### Target Assessment\n- **Print servers identified:** \n- **Spooler service running:** \n\n### Exploitation Attempts\n- **Local privilege escalation:** \n- **Remote code execution:** \n\n### Results\n- **Successful exploits:** \n- **Failed attempts:** \n\n### Impact\n- **System compromise:** \n- **Domain escalation path:** \n"
+                    ;;
+                "3-SMBGhost.md")
+                    content+="## SMBGhost (CVE-2020-0796)\n\n### Target Assessment\n- **SMBv3.1.1 systems:** \n- **Vulnerable versions:** \n\n### Exploitation Results\n- **Successful:** \n- **Failed:** \n\n### Impact\n- **Remote code execution:** \n- **System compromise:** \n\n### Remediation Status\n- **Patched systems:** \n- **Unpatched systems:** \n"
+                    ;;
+                "4-Unauthenticated Coercion.md")
+                    content+="## Unauthenticated Coercion Attacks\n\n### PetitPotam\n- **Vulnerable systems:** \n- **Successful coercion:** \n\n### DFSCoerce\n- **DFS servers identified:** \n- **Coercion successful:** \n\n### PrinterBug\n- **Print servers:** \n- **Coercion results:** \n\n### Impact\n- **NTLM relay potential:** \n- **Certificate template abuse:** \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/1-Unauthenticated/01-Unauth SMB/$file"; then
+                failed_files+=("03-Evidence/1-Notes/1-Unauthenticated/01-Unauth SMB/$file")
+            fi
+        done
+        
+        # Create placeholder structure for remaining sections
+        echo -e "# Unauthenticated LDAP Enumeration\n\n## Anonymous Bind Results\n- \n\n## Information Disclosed\n- \n" > "03-Evidence/1-Notes/1-Unauthenticated/02-Unauth LDAP/README.md"
+        echo -e "# Unauthenticated Vulnerabilities\n\n## Vulnerability Scans\n- \n\n## Findings\n- \n" > "03-Evidence/1-Notes/1-Unauthenticated/03-Unauth Vulns/README.md"
+        
+        # Create basic structure files for other main sections
+        echo -e "# ManSpider Results\n\n## Interesting Files Found\n- \n\n## Sensitive Data\n- \n" > "03-Evidence/1-Notes/2-SMB/01-Manspider/README.md"
+        
+        # SMB section files
+        local smb_files=(
+            "1-Unauthenticated Shares.md"
+            "2-Guest Access.md"
+            "3-Spider Shares.md"
+            "4-SMB Vuln Scans.md"
+        )
+        
+        for file in "${smb_files[@]}"; do
+            echo -e "# ${file%.md}\n\n## Results\n- \n\n## Findings\n- \n" > "03-Evidence/1-Notes/2-SMB/$file"
+        done
+        
+        # LDAP section files with detailed content
+        local ldap_files=(
+            "1-Anonymous Bind.md" "2-enum4linux-ng.md" "3-LDAP Signing.md" "4-Other Tools.md" 
+            "5-Delegation.md" "6-MAQ.md" "7-DACL Enumeration.md" "8-BloodHound.md" 
+            "9-Domain Trusts.md" "10-SCCM.md" "11-Entra ID.md"
+        )
+        
+        for file in "${ldap_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "8-BloodHound.md")
+                    content+="## BloodHound Collection\n\n### Collection Methods\n- [ ] SharpHound\n- [ ] BloodHound.py\n- [ ] AzureHound\n\n### Data Collected\n- **Users:** 0\n- **Computers:** 0\n- **Groups:** 0\n- **Sessions:** 0\n\n### Attack Paths\n- **Shortest path to DA:** \n- **Kerberoastable users:** \n- **AS-REP roastable:** \n- **Unconstrained delegation:** \n"
+                    ;;
+                *)
+                    content+="## Results\n- \n\n## Findings\n- \n\n## Commands Used\n\`\`\`bash\n\n\`\`\`\n"
+                    ;;
+            esac
+            echo -e "$content" > "03-Evidence/1-Notes/3-LDAP/$file"
+        done
+        
+        # Create remaining section structure
+        local remaining_sections=(
+            "4-Poisoning" "5-User Compromise" "6-ADCS" "7-Machine Compromise" 
+            "8-MSSQL" "9-Internal Services" "10-Internal Web Services"
+        )
+        
+        for section in "${remaining_sections[@]}"; do
+            echo -e "# ${section#*-}\n\n## Testing Results\n- \n\n## Findings\n- \n" > "03-Evidence/1-Notes/$section/README.md"
+        done
+        
+        # Create specific files for some sections
+        echo -e "# Default Credentials\n\n## Web Services Tested\n- \n\n## Default Creds Found\n- \n" > "03-Evidence/1-Notes/10-Internal Web Services/1-Default Credentials.md"
+        
+    else
+        # For Web App tests, use the original note structure
+        for note_file in "${note_files[@]}"; do
+            local header="# ${note_file%.md}"
+            local content="$header\n\n"
+            
+            # Add assessment-specific content for certain files
+            case "$note_file" in
+                *"Administrative Information"*)
+                    content+="\n## Project Details\n- **Assessment Type:** $assessment_name\n- **Start Date:** $(date +%Y-%m-%d)\n- **Target:** ${final_ip:-"TBD"}\n- **Tester:** $USER\n\n## Scope\n- [ ] Define scope boundaries\n- [ ] Identify excluded systems\n- [ ] Document testing windows\n\n## Contacts\n- **Primary Contact:** \n- **Technical Contact:** \n- **Emergency Contact:** \n"
+                    ;;
+                *"Scoping Information"*)
+                    content+="\n## Web Application Scope\n- **Application URLs:** \n- **Authentication Required:** \n- **Test Accounts:** \n- **Excluded Functionality:** \n- **Testing Methods Approved:** \n  - [ ] Automated Scanning\n  - [ ] Manual Testing\n  - [ ] Authenticated Testing\n  - [ ] API Testing\n"
+                    ;;
+                *"Activity Log"*)
+                    content+="\n## Testing Activities\n\n### $(date +%Y-%m-%d)\n- **Time:** $(date +%H:%M)\n- **Activity:** Initial setup and reconnaissance\n- **Notes:** \n\n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/Notes/$note_file"; then
+                failed_files+=("$note_file")
+            fi
+        done
+    fi
+    
+    if [[ ${#failed_files[@]} -gt 0 ]]; then
+        echo "⚠️  Warning: Failed to create some note files: ${failed_files[*]}" >&2
+    fi
+    
+    # Create .envrc file with proper escaping
+    echo "🔧 Creating environment file..."
+    {
+        echo "export name='$dirname'"
+        echo "export assessment_type='$assessment_name'"
+        [[ -n "$final_ip" ]] && echo "export ip='$final_ip'"
+        [[ -n "$final_lhost" ]] && echo "export lhost='$final_lhost'"
+    } > .envrc
+    
+    # Create assessment-specific README
+    echo "📝 Creating assessment README..."
+    case $assessment_type in
+        1) # External Network Test
+            cat > README.md << 'EOF'
+# External Network Assessment
+
+## Assessment Overview
+This directory contains materials for an external network penetration test using a structured methodology.
+
+## Directory Structure
+```
+├── 01-Admin/                           # Administrative documents
+│   ├── 1-Admin Information.md          # Project details and contacts
+│   ├── 2-Scope.md                     # Scope definition and rules
+│   ├── 3-Questions.md                 # Client questions and clarifications
+│   ├── 4-Clean-Up.md                  # Post-engagement cleanup tasks
+│   └── 5-TODO.md                      # Task tracking and checklist
+├── 02-Data/                           # Structured data collection
+│   ├── 1-Users List.md                # Discovered user accounts
+│   ├── 2-Listening Services.md        # Service inventory
+│   └── 3-Count of Listening Service.md # Service statistics
+├── 03-Evidence/                       # All testing evidence
+│   ├── 1-Notes/                       # Organized testing notes
+│   │   ├── 1-OSINT/                   # Open source intelligence
+│   │   ├── 2-Hostname Enumeration/    # Domain and subdomain discovery
+│   │   ├── 3-Scans/                   # Port and vulnerability scans
+│   │   ├── 4-Services/                # Service enumeration results
+│   │   └── 5-Web App Testing/         # Web application findings
+│   ├── 2-Findings/                    # Documented vulnerabilities
+│   ├── 3-Logging_Output/              # Tool outputs and logs
+│   ├── 4-Misc. Files/                 # Other relevant files
+│   └── 5-Screenshots/                 # Visual evidence
+└── 04-Retest/                         # Retest materials
+```
+
+## Testing Methodology
+1. **Administrative Setup** - Project planning and scope definition
+2. **OSINT Gathering** - Passive information collection
+3. **Hostname Enumeration** - Domain and subdomain discovery
+4. **Network Scanning** - Port discovery and service identification
+5. **Vulnerability Assessment** - Automated and manual testing
+6. **Service Enumeration** - Detailed service analysis
+7. **Web Application Testing** - Application security testing
+8. **Reporting** - Documentation and finding compilation
+
+## Key Testing Phases
+
+### Phase 1: Information Gathering
+- **OSINT**: Repository searching, Google dorking, breach data
+- **Hostname Discovery**: DNS enumeration, certificate transparency
+- **Email Security**: SPF, DKIM, DMARC analysis
+
+### Phase 2: Network Assessment
+- **Host Discovery**: Network mapping and live host identification
+- **Port Scanning**: TCP/UDP service discovery
+- **Service Enumeration**: Banner grabbing and version detection
+
+### Phase 3: Vulnerability Assessment
+- **Automated Scanning**: Nessus, Nuclei vulnerability detection
+- **Manual Testing**: Custom security assessments
+- **TLS/SSL Analysis**: Encryption and certificate review
+
+### Phase 4: Exploitation & Documentation
+- **Service Exploitation**: Proof-of-concept testing
+- **Web Application Testing**: OWASP methodology
+- **Evidence Collection**: Screenshots and log compilation
+
+## Common Tools
+- **OSINT**: Shodan, Hunter.io, theHarvester, recon-ng
+- **DNS**: subfinder, amass, dnsrecon, fierce
+- **Scanning**: nmap, masscan, zmap
+- **Web**: gobuster, ffuf, burpsuite, nuclei
+- **Vulnerability**: nessus, openvas, nikto
+- **SSL/TLS**: sslyze, testssl.sh, sslscan
+EOF
+            ;;
+        2) # Internal Network Test
+            cat > README.md << 'EOF'
+# Internal Network Assessment
+
+## Assessment Overview
+This directory contains materials for an internal network penetration test using a structured Active Directory methodology.
+
+## Directory Structure
+```
+├── 01-Admin/                           # Administrative documents
+│   ├── 1-Admin Information.md          # Project details and contacts
+│   ├── 2-Scope.md                     # Scope definition and rules
+│   ├── 3-Questions.md                 # Client questions and clarifications
+│   ├── 4-Clean-Up.md                  # Post-engagement cleanup tasks
+│   ├── 5-TODO.md                      # Task tracking and checklist
+│   └── 6-Detections.md                # Blue team coordination
+├── 02-Data/                           # Structured data collection
+│   ├── 1-Users List.md                # Discovered user accounts
+│   ├── 2-Listening Services.md        # Service inventory
+│   ├── 3-Count of Listening Services.md # Service statistics
+│   └── 4-Technology in Use.md         # Technology stack analysis
+├── 03-Evidence/                       # All testing evidence
+│   ├── 1-Notes/                       # Organized testing notes
+│   │   ├── 1-Unauthenticated/         # Pre-credential testing
+│   │   │   ├── 01-Unauth SMB/         # SMB vulnerability testing
+│   │   │   ├── 02-Unauth LDAP/        # LDAP enumeration
+│   │   │   └── 03-Unauth Vulns/       # General vulnerabilities
+│   │   ├── 2-SMB/                     # SMB enumeration and testing
+│   │   ├── 3-LDAP/                    # LDAP and AD enumeration
+│   │   ├── 4-Poisoning/               # Network poisoning attacks
+│   │   ├── 5-User Compromise/         # User account attacks
+│   │   ├── 6-ADCS/                    # Certificate Services attacks
+│   │   ├── 7-Machine Compromise/      # Computer account attacks
+│   │   ├── 8-MSSQL/                   # SQL Server testing
+│   │   ├── 9-Internal Services/       # Other internal services
+│   │   └── 10-Internal Web Services/  # Internal web applications
+│   ├── 2-Findings/                    # Documented vulnerabilities
+│   ├── 3-Logging Output/              # Tool outputs and logs
+│   ├── 4-Misc. Files/                 # Other relevant files
+│   └── 5-Screenshots/                 # Visual evidence
+└── 04-Retest/                         # Retest materials
+```
+
+## Testing Methodology
+1. **Administrative Setup** - Project planning and scope definition
+2. **Unauthenticated Enumeration** - Pre-credential information gathering
+3. **SMB Enumeration** - Share analysis and file discovery
+4. **LDAP Enumeration** - Active Directory reconnaissance
+5. **Network Poisoning** - LLMNR/NBT-NS and relay attacks
+6. **User Compromise** - Credential attacks and user enumeration
+7. **Machine Compromise** - Computer account attacks
+8. **Privilege Escalation** - Domain admin compromise paths
+
+## Key Testing Phases
+
+### Phase 1: Unauthenticated Assessment
+- **Network Discovery**: Host and service identification
+- **Vulnerability Assessment**: ZeroLogon, PrintNightmare, SMBGhost
+- **Information Gathering**: Anonymous LDAP/SMB enumeration
+- **Coercion Attacks**: PetitPotam, DFSCoerce, PrinterBug
+
+### Phase 2: Authenticated Enumeration
+- **SMB Analysis**: Share enumeration, file discovery with ManSpider
+- **LDAP Enumeration**: Users, groups, ACLs, delegation
+- **BloodHound Collection**: Attack path analysis
+- **Service Discovery**: MSSQL, ADCS, internal applications
+
+### Phase 3: Credential Attacks
+- **Network Poisoning**: LLMNR/NBT-NS, NTLM relay, IPv6 attacks
+- **Kerberos Attacks**: AS-REP roasting, Kerberoasting
+- **Password Attacks**: Spraying, credential stuffing
+- **Certificate Attacks**: ESC1-ESC8, template vulnerabilities
+
+### Phase 4: Lateral Movement & Escalation
+- **Machine Compromise**: Local admin access, shadow credentials
+- **Credential Extraction**: LSASS dumps, DCSync
+- **Persistence**: Golden tickets, shadow credentials
+- **Domain Compromise**: Path to Domain Admin
+
+## Common Tools
+- **Enumeration**: BloodHound, SharpHound, enum4linux-ng, ldapdomaindump
+- **Network Attacks**: Responder, ntlmrelayx, mitm6, Inveigh
+- **Kerberos**: GetNPUsers, GetUserSPNs, Rubeus, impacket
+- **SMB**: smbclient, smbmap, ManSpider, NetExec
+- **ADCS**: Certipy, Certify, ForgeCert
+- **Exploitation**: impacket suite, BloodHound, PowerShell Empire
+EOF
+            ;;
+        3) # Web Application Test
+            cat > README.md << 'EOF'
+# Web Application Assessment
+
+## Assessment Overview
+This directory contains materials for a web application penetration test.
+
+## Directory Structure
+- `01-Admin/` - Administrative documents and contracts
+- `02-OSINT/` - Open source intelligence gathering
+- `03-Evidence/Notes/` - Detailed testing notes organized by testing category
+- `03-Evidence/Scans/` - Web vulnerability scans and API testing results
+- `03-Evidence/Tools/` - Burp Suite projects and custom scripts
+- `03-Evidence/Screenshots/` - Screenshots of findings
+- `03-Evidence/Findings/` - Documented vulnerabilities and findings
+- `03-Evidence/Logging output/` - Tool output and logs
+- `03-Evidence/Misc files/` - Other relevant files
+- `04-Retest/` - Materials for any retest activities
+
+## Key Testing Categories
+1. **Authentication Testing** - Login mechanisms, password policies, MFA
+2. **Authorization Testing** - Access controls and privilege escalation
+3. **Input Validation** - SQL injection, XSS, command injection
+4. **Session Management** - Session fixation, hijacking, logout
+5. **Business Logic** - Workflow bypasses and logic flaws
+6. **Client-Side Testing** - DOM XSS, CSRF, clickjacking
+7. **API Testing** - REST/GraphQL API security testing
+
+## Common Tools
+- burpsuite - Primary web application testing platform
+- owasp zap - Alternative web proxy and scanner
+- sqlmap - SQL injection testing
+- ffuf, gobuster - Directory and parameter enumeration
+- nuclei - Web vulnerability scanning
+- postman/insomnia - API testing
+EOF
+            ;;
+    esac
+    
+    # Check if direnv is available
+    if command -v direnv >/dev/null 2>&1; then
+        if direnv allow; then
+            echo "✅ Environment variables configured with direnv"
+        else
+            echo "⚠️  Warning: Failed to configure direnv" >&2
+        fi
+    else
+        echo "💡 Tip: Install direnv to automatically load environment variables"
+        echo "   For now, you can source the .envrc file manually: source .envrc"
+    fi
+    
+    echo
+    echo "✅ Project directory '$dirname' created successfully!"
+    echo "� Assessment Type: $assessment_name"
+    echo "�📍 Current location: $(pwd)"
+    echo "🌐 Target IP: ${final_ip:-"Not set"}"
+    echo "🏠 Host IP: ${final_lhost:-"Not set"}"
+}
+
+function genadname() {
+    # Validate input
+    if [[ -z "$1" ]]; then
+        echo "❌ Usage: genadname \"First Last\"" >&2
+        echo "   Example: genadname \"John Doe\"" >&2
+        return 1
+    fi
+    
+    # Process each line of input (supports multiple names)
+    echo "$1" | while IFS= read -r line; do
+        # Skip empty lines
+        [[ -z "$line" ]] && continue
+        
+        # Parse names with better handling of edge cases
+        local firstname lastname
+        firstname=$(echo "$line" | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
+        lastname=$(echo "$line" | awk '{print $2}' | tr '[:upper:]' '[:lower:]')
+        
+        # Validate that we have both first and last names
+        if [[ -z "$firstname" || -z "$lastname" ]]; then
+            echo "⚠️  Warning: Skipping invalid name format: '$line'" >&2
+            continue
+        fi
+        
+        # Generate variations more efficiently using printf
+        local first_initial="${firstname:0:1}"
+        local last_initial="${lastname:0:1}"
+        local first_three="${firstname:0:3}"
+        local last_three="${lastname:0:3}"
+        
+        # Output all variations with comments for clarity
+        cat << EOF
+${firstname}${lastname}
+${lastname}${firstname}
+${firstname}.${lastname}
+${lastname}.${firstname}
+${lastname}${first_initial}
+${firstname}${last_initial}
+${first_initial}.${lastname}
+${first_three}${last_three}
+${first_three}.${last_three}
+${first_initial}${lastname}
+${lastname}.${first_initial}
+${last_three}_${first_three}
+${first_three}_${last_three}
+${firstname}
+${lastname}
+${last_initial}.${firstname}
+${last_initial}${firstname}
+EOF
+    done
+}
