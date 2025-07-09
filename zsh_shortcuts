@@ -1101,9 +1101,7 @@ function createdir() {
             fi
         done
         
-        # 03-Evidence/1-Notes files - Unauthenticated section
-        
-        # Unauthenticated main files
+        # 03-Evidence/1-Notes/1-Unauthenticated - Main files at root level
         local unauth_files=(
             "1-Packet Capture.md"
             "2-Responder Analyze.md"
@@ -1145,7 +1143,7 @@ function createdir() {
             fi
         done
         
-        # Unauthenticated SMB files
+        # 03-Evidence/1-Notes/1-Unauthenticated/01-Unauth SMB files
         local unauth_smb_files=(
             "1-ZeroLogon.md"
             "2-PrintNightmare.md"
@@ -1175,14 +1173,13 @@ function createdir() {
             fi
         done
         
-        # Create placeholder structure for remaining sections
+        # Create placeholder README files for subdirectories
         echo -e "# Unauthenticated LDAP Enumeration\n\n## Anonymous Bind Results\n- \n\n## Information Disclosed\n- \n" > "03-Evidence/1-Notes/1-Unauthenticated/02-Unauth LDAP/README.md"
         echo -e "# Unauthenticated Vulnerabilities\n\n## Vulnerability Scans\n- \n\n## Findings\n- \n" > "03-Evidence/1-Notes/1-Unauthenticated/03-Unauth Vulns/README.md"
         
-        # Create basic structure files for other main sections
+        # 03-Evidence/1-Notes/2-SMB section
         echo -e "# ManSpider Results\n\n## Interesting Files Found\n- \n\n## Sensitive Data\n- \n" > "03-Evidence/1-Notes/2-SMB/01-Manspider/README.md"
         
-        # SMB section files
         local smb_files=(
             "1-Unauthenticated Shares.md"
             "2-Guest Access.md"
@@ -1191,10 +1188,28 @@ function createdir() {
         )
         
         for file in "${smb_files[@]}"; do
-            echo -e "# ${file%.md}\n\n## Results\n- \n\n## Findings\n- \n" > "03-Evidence/1-Notes/2-SMB/$file"
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Unauthenticated Shares.md")
+                    content+="## Unauthenticated Share Access\n\n### Discovered Shares\n| Host | Share | Permissions | Contents | Notes |\n|------|-------|-------------|----------|-------|\n|      |       |             |          |       |\n\n### Interesting Files\n- \n\n### Sensitive Information\n- \n"
+                    ;;
+                "2-Guest Access.md")
+                    content+="## Guest Account Access\n\n### Systems with Guest Access\n- \n\n### Accessible Resources\n- \n\n### Information Disclosed\n- \n"
+                    ;;
+                "3-Spider Shares.md")
+                    content+="## Share Spidering Results\n\n### Tools Used\n- [ ] smbclient\n- [ ] smbmap\n- [ ] ManSpider\n- [ ] ShareFinder\n\n### Interesting Files Found\n- \n\n### Credentials in Files\n- \n"
+                    ;;
+                "4-SMB Vuln Scans.md")
+                    content+="## SMB Vulnerability Assessment\n\n### Vulnerabilities Found\n- \n\n### Exploitable Issues\n- \n\n### Remediation Recommendations\n- \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/2-SMB/$file"; then
+                failed_files+=("03-Evidence/1-Notes/2-SMB/$file")
+            fi
         done
         
-        # LDAP section files with detailed content
+        # 03-Evidence/1-Notes/3-LDAP section
         local ldap_files=(
             "1-Anonymous Bind.md" "2-enum4linux-ng.md" "3-LDAP Signing.md" "4-Other Tools.md" 
             "5-Delegation.md" "6-MAQ.md" "7-DACL Enumeration.md" "8-BloodHound.md" 
@@ -1204,6 +1219,9 @@ function createdir() {
         for file in "${ldap_files[@]}"; do
             local content="# ${file%.md}\n\n"
             case "$file" in
+                "1-Anonymous Bind.md")
+                    content+="## Anonymous LDAP Bind\n\n### Bind Results\n- **Anonymous bind allowed:** \n- **Information disclosed:** \n\n### Enumerated Objects\n- **Users:** \n- **Groups:** \n- **Computers:** \n- **OUs:** \n\n### Notable Findings\n- \n"
+                    ;;
                 "8-BloodHound.md")
                     content+="## BloodHound Collection\n\n### Collection Methods\n- [ ] SharpHound\n- [ ] BloodHound.py\n- [ ] AzureHound\n\n### Data Collected\n- **Users:** 0\n- **Computers:** 0\n- **Groups:** 0\n- **Sessions:** 0\n\n### Attack Paths\n- **Shortest path to DA:** \n- **Kerberoastable users:** \n- **AS-REP roastable:** \n- **Unconstrained delegation:** \n"
                     ;;
@@ -1211,21 +1229,175 @@ function createdir() {
                     content+="## Results\n- \n\n## Findings\n- \n\n## Commands Used\n\`\`\`bash\n\n\`\`\`\n"
                     ;;
             esac
-            echo -e "$content" > "03-Evidence/1-Notes/3-LDAP/$file"
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/3-LDAP/$file"; then
+                failed_files+=("03-Evidence/1-Notes/3-LDAP/$file")
+            fi
         done
         
-        # Create remaining section structure
-        local remaining_sections=(
-            "4-Poisoning" "5-User Compromise" "6-ADCS" "7-Machine Compromise" 
-            "8-MSSQL" "9-Internal Services" "10-Internal Web Services"
+        # 03-Evidence/1-Notes/4-Poisoning section
+        local poisoning_files=(
+            "1-LLMNR_NBNS Poisoning.md"
+            "2-NTLM Relay.md"
+            "3-LDAP Relay.md"
+            "4-WebClient Service.md"
+            "5-IPv6.md"
         )
         
-        for section in "${remaining_sections[@]}"; do
-            echo -e "# ${section#*-}\n\n## Testing Results\n- \n\n## Findings\n- \n" > "03-Evidence/1-Notes/$section/README.md"
+        for file in "${poisoning_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-LLMNR_NBNS Poisoning.md")
+                    content+="## LLMNR/NBT-NS Poisoning\n\n### Responder Configuration\n- **Interface:** \n- **Protocols enabled:** \n\n### Captured Hashes\n- \n\n### Successful Attacks\n- \n\n### Analysis Results\n- **Cracked passwords:** \n- **Relay opportunities:** \n"
+                    ;;
+                "2-NTLM Relay.md")
+                    content+="## NTLM Relay Attacks\n\n### Target Systems\n- **SMB signing disabled:** \n- **Relay targets:** \n\n### Relay Results\n- **Successful relays:** \n- **Compromised accounts:** \n\n### Exploitation\n- **Code execution:** \n- **Credential extraction:** \n"
+                    ;;
+                "3-LDAP Relay.md")
+                    content+="## LDAP Relay Attacks\n\n### LDAP Signing Status\n- **Domain controllers:** \n- **LDAP signing enforced:** \n\n### Relay Attacks\n- **Successful relays:** \n- **Privilege escalation:** \n\n### Impact\n- **Domain compromise:** \n- **Certificate template abuse:** \n"
+                    ;;
+                "4-WebClient Service.md")
+                    content+="## WebClient Service Abuse\n\n### WebClient Enumeration\n- **Systems with WebClient:** \n- **Service status:** \n\n### Coercion Methods\n- **File access coercion:** \n- **Authentication relay:** \n\n### Results\n- **Successful coercion:** \n- **Credential capture:** \n"
+                    ;;
+                "5-IPv6.md")
+                    content+="## IPv6 Attacks\n\n### IPv6 Configuration\n- **IPv6 enabled systems:** \n- **DHCPv6 configuration:** \n\n### Attack Vectors\n- **IPv6 DNS takeover:** \n- **Mitm6 attacks:** \n\n### Results\n- **DNS hijacking:** \n- **Credential interception:** \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/4-Poisoning/$file"; then
+                failed_files+=("03-Evidence/1-Notes/4-Poisoning/$file")
+            fi
         done
         
-        # Create specific files for some sections
-        echo -e "# Default Credentials\n\n## Web Services Tested\n- \n\n## Default Creds Found\n- \n" > "03-Evidence/1-Notes/10-Internal Web Services/1-Default Credentials.md"
+        # 03-Evidence/1-Notes/5-User Compromise section
+        local user_compromise_files=(
+            "1-AS-REPRoasting.md"
+            "2-Kerberoasting.md"
+            "3-Password Spray.md"
+            "4-Credential Stuffing.md"
+            "5-User Descriptions.md"
+            "6-Re-Check Shares.md"
+            "7-Logged-in Users.md"
+        )
+        
+        for file in "${user_compromise_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-AS-REPRoasting.md")
+                    content+="## AS-REP Roasting\n\n### AS-REP Roastable Users\n- \n\n### Hash Extraction\n- **Successful extractions:** \n- **Hash format:** \n\n### Cracking Results\n- **Cracked passwords:** \n- **Password patterns:** \n"
+                    ;;
+                "2-Kerberoasting.md")
+                    content+="## Kerberoasting\n\n### Kerberoastable Accounts\n- \n\n### Service Tickets\n- **Extracted tickets:** \n- **Encryption types:** \n\n### Cracking Results\n- **Cracked passwords:** \n- **Service account compromise:** \n"
+                    ;;
+                "3-Password Spray.md")
+                    content+="## Password Spraying\n\n### Target Users\n- **User list source:** \n- **Total users:** \n\n### Password Attempts\n- **Passwords tested:** \n- **Successful logins:** \n\n### Account Lockout\n- **Lockout threshold:** \n- **Locked accounts:** \n"
+                    ;;
+                "4-Credential Stuffing.md")
+                    content+="## Credential Stuffing\n\n### Credential Sources\n- **Breach databases:** \n- **Credential pairs:** \n\n### Testing Results\n- **Valid credentials:** \n- **Account access:** \n\n### Impact Assessment\n- **Compromised accounts:** \n- **Privilege levels:** \n"
+                    ;;
+                "5-User Descriptions.md")
+                    content+="## User Description Analysis\n\n### Descriptions with Passwords\n- \n\n### Pattern Analysis\n- **Common patterns:** \n- **Default descriptions:** \n\n### Credential Extraction\n- **Found credentials:** \n- **Validation results:** \n"
+                    ;;
+                "6-Re-Check Shares.md")
+                    content+="## Share Re-enumeration\n\n### New Access with Credentials\n- **Previously inaccessible shares:** \n- **Additional permissions:** \n\n### Sensitive Data Discovery\n- **New files found:** \n- **Credential harvesting:** \n\n### Privilege Escalation Paths\n- **Administrative shares:** \n- **Service account access:** \n"
+                    ;;
+                "7-Logged-in Users.md")
+                    content+="## Logged-in User Analysis\n\n### Active Sessions\n- **Domain controllers:** \n- **Member servers:** \n- **Workstations:** \n\n### Administrative Sessions\n- **Domain admins:** \n- **Local admins:** \n- **Service accounts:** \n\n### Lateral Movement Opportunities\n- **Target systems:** \n- **Credential harvesting:** \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/5-User Compromise/$file"; then
+                failed_files+=("03-Evidence/1-Notes/5-User Compromise/$file")
+            fi
+        done
+        
+        # 03-Evidence/1-Notes/6-ADCS section
+        local adcs_files=(
+            "1-ADCS Server.md"
+            "2-ADCS Templates.md"
+            "3-Vulnerable Templates.md"
+        )
+        
+        for file in "${adcs_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-ADCS Server.md")
+                    content+="## ADCS Server Discovery\n\n### Certificate Authorities\n- **CA servers:** \n- **CA hierarchy:** \n\n### CA Configuration\n- **Web enrollment:** \n- **Certificate templates:** \n\n### Access Control\n- **Enrollment permissions:** \n- **Template permissions:** \n"
+                    ;;
+                "2-ADCS Templates.md")
+                    content+="## Certificate Templates\n\n### Available Templates\n- \n\n### Template Analysis\n- **Enrollment rights:** \n- **Certificate purposes:** \n- **Subject requirements:** \n\n### Vulnerable Configurations\n- **ESC1 vulnerabilities:** \n- **ESC2 vulnerabilities:** \n- **Other misconfigurations:** \n"
+                    ;;
+                "3-Vulnerable Templates.md")
+                    content+="## Vulnerable Template Exploitation\n\n### ESC1 - Misconfigured Templates\n- **Vulnerable templates:** \n- **Exploitation results:** \n\n### ESC2 - Any Purpose EKU\n- **Affected templates:** \n- **Certificate abuse:** \n\n### ESC8 - NTLM Relay to ADCS\n- **Relay opportunities:** \n- **Certificate requests:** \n\n### Impact\n- **Domain compromise:** \n- **Persistence mechanisms:** \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/6-ADCS/$file"; then
+                failed_files+=("03-Evidence/1-Notes/6-ADCS/$file")
+            fi
+        done
+        
+        # 03-Evidence/1-Notes/7-Machine Compromise section
+        local machine_compromise_files=(
+            "1-Local Admin Access.md"
+            "2-Shadow Credentials.md"
+            "3-Dump Secrets.md"
+        )
+        
+        for file in "${machine_compromise_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Local Admin Access.md")
+                    content+="## Local Administrator Access\n\n### Compromised Systems\n- \n\n### Access Methods\n- **Password reuse:** \n- **Credential dumping:** \n- **Token impersonation:** \n\n### Privilege Escalation\n- **Local admin to domain:** \n- **Service account compromise:** \n"
+                    ;;
+                "2-Shadow Credentials.md")
+                    content+="## Shadow Credentials Attack\n\n### Target Computers\n- \n\n### Key Trust Abuse\n- **Certificate generation:** \n- **Authentication success:** \n\n### Persistence\n- **Shadow credential backdoors:** \n- **Certificate validity:** \n"
+                    ;;
+                "3-Dump Secrets.md")
+                    content+="## Credential Extraction\n\n### LSASS Dumps\n- **Target systems:** \n- **Extraction methods:** \n\n### Extracted Credentials\n- **Plaintext passwords:** \n- **NTLM hashes:** \n- **Kerberos tickets:** \n\n### DCSync\n- **Domain controller access:** \n- **Hash extraction:** \n- **Domain compromise:** \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/7-Machine Compromise/$file"; then
+                failed_files+=("03-Evidence/1-Notes/7-Machine Compromise/$file")
+            fi
+        done
+        
+        # 03-Evidence/1-Notes/8-MSSQL section
+        local mssql_files=(
+            "1-Anonymous Data Access.md"
+            "2-Command Execution.md"
+            "3-Impersonation.md"
+            "4-NTLM Theft.md"
+        )
+        
+        for file in "${mssql_files[@]}"; do
+            local content="# ${file%.md}\n\n"
+            case "$file" in
+                "1-Anonymous Data Access.md")
+                    content+="## Anonymous SQL Server Access\n\n### SQL Server Discovery\n- **Instances found:** \n- **Anonymous access:** \n\n### Data Enumeration\n- **Accessible databases:** \n- **Sensitive tables:** \n\n### Information Disclosure\n- **Credentials in data:** \n- **Business data:** \n"
+                    ;;
+                "2-Command Execution.md")
+                    content+="## SQL Server Command Execution\n\n### xp_cmdshell Status\n- **Enabled instances:** \n- **Enable attempts:** \n\n### Command Execution\n- **Successful commands:** \n- **System information:** \n\n### Privilege Context\n- **SQL service account:** \n- **System privileges:** \n"
+                    ;;
+                "3-Impersonation.md")
+                    content+="## SQL Server Impersonation\n\n### Impersonation Rights\n- **Impersonatable users:** \n- **Privilege escalation:** \n\n### Login Enumeration\n- **SQL logins:** \n- **Windows authentication:** \n\n### Lateral Movement\n- **Linked servers:** \n- **Cross-database access:** \n"
+                    ;;
+                "4-NTLM Theft.md")
+                    content+="## NTLM Hash Theft\n\n### Hash Stealing Methods\n- **xp_dirtree:** \n- **xp_fileexist:** \n- **OPENROWSET:** \n\n### Captured Hashes\n- **Service accounts:** \n- **User accounts:** \n\n### Relay Opportunities\n- **Hash relay targets:** \n- **Privilege escalation:** \n"
+                    ;;
+            esac
+            
+            if ! echo -e "$content" > "03-Evidence/1-Notes/8-MSSQL/$file"; then
+                failed_files+=("03-Evidence/1-Notes/8-MSSQL/$file")
+            fi
+        done
+        
+        # 03-Evidence/1-Notes/9-Internal Services section
+        echo -e "# Plaintext Protocols\n\n## Discovered Services\n- **Telnet:** \n- **FTP:** \n- **HTTP authentication:** \n\n## Credential Interception\n- **Captured credentials:** \n- **Protocol analysis:** \n" > "03-Evidence/1-Notes/9-Internal Services/1-Plaintext Protocols.md"
+        
+        # 03-Evidence/1-Notes/10-Internal Web Services section
+        echo -e "# Default Credentials\n\n## Web Services Tested\n- \n\n## Default Creds Found\n- \n\n## Administrative Interfaces\n- \n" > "03-Evidence/1-Notes/10-Internal Web Services/1-Default Credentials.md"
         
     else
         # For Web App tests, use the original note structure
