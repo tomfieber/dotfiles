@@ -146,6 +146,7 @@ if [ -d $HOME/.pyenv ]; then
 fi
 
 export LESS="-Xr"
+export PYTHONWARNINGS="ignore"
 
 ulimit -n 4096
 
