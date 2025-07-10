@@ -168,6 +168,23 @@ else
     fi
 fi
 
+# Install uv
+if ! command -v uv > /dev/null; then
+    show_progress "Installing" "uv"
+    log_info "Installing uv"
+    
+    curl -LsSf https://astral.sh/uv/install.sh | sh 2>>$LOG_FILE
+    if [ $? -ne 0 ]; then
+        log_error "Failed to install uv"
+        echo -e "${RED}[✗] Failed to install uv${NC}"
+    else
+        show_success "uv"
+    fi
+else
+    log_info "uv is already installed"
+fi
+
+
 # Install pyenv if not already installed
 if ! command -v pyenv &> /dev/null; then
     show_progress "Installing" "pyenv"

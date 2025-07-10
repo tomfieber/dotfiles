@@ -244,26 +244,26 @@ install_go() {
     fi
 }
 
-install_pipx() {
+install_uv() {
     local package="$1"
     local package_name=$(basename "$package" .git)
     
-    if ! command_exists pipx; then
-        log_warning "pipx not available - skipping $package"
-        SKIPPED_INSTALLS+=("$package (pipx not available)")
+    if ! command_exists uv; then
+        log_warning "uv not available - skipping $package"
+        SKIPPED_INSTALLS+=("$package (uv not available)")
         return 1
     fi
     
-    if is_installed "$package_name" "pipx"; then
-        log_info "$package already installed via pipx"
+    if is_installed "$package_name" "uv"; then
+        log_info "$package already installed via uv"
         SKIPPED_INSTALLS+=("$package (already installed)")
         return 0
     fi
     
-    show_progress "Installing" "$package via pipx"
-    log_info "Installing $package via pipx"
+    show_progress "Installing" "$package via uv"
+    log_info "Installing $package via uv"
     
-    if pipx install "$package" 2>>"$LOG_FILE"; then
+    if uv tool install "$package" 2>>"$LOG_FILE"; then
         show_success "$package"
         SUCCESSFUL_INSTALLS+=("$package")
         return 0
@@ -570,67 +570,62 @@ if command_exists pipx; then
     log_info "Installing Python tools via pipx"
     
     # Security tools
-    install_pipx git+https://github.com/fortra/impacket.git
-    install_pipx git+https://github.com/ly4k/Certipy.git
-    install_pipx git+https://github.com/dirkjanm/BloodHound.py.git
-    install_pipx git+https://github.com/blacklanternsecurity/MANSPIDER
-    install_pipx git+https://github.com/Pennyw0rth/NetExec
-    install_pipx git+https://github.com/p0dalirius/Coercer.git
-    install_pipx git+https://github.com/skelsec/pypykatz.git
-    
-    # Global install for mitm6
-    if ! pipx list --include-deps | grep -q mitm6; then
-        sudo pipx install --global git+https://github.com/dirkjanm/mitm6.git
-    fi
-    
-    install_pipx git+https://github.com/Mazars-Tech/AD_Miner.git
-    install_pipx git+https://github.com/zblurx/certsync.git
-    install_pipx git+https://github.com/ImpostorKeanu/parsuite.git
-    install_pipx git+https://github.com/AetherBlack/abuseACL.git
-    install_pipx git+https://github.com/aas-n/aclpwn.py.git
-    install_pipx git+https://github.com/dirkjanm/adidnsdump.git
-    install_pipx git+https://github.com/androguard/androguard.git
-    install_pipx git+https://github.com/angr/angr.git
-    install_pipx git+https://github.com/s0md3v/Arjun.git
-    install_pipx git+https://github.com/Orange-Cyberdefense/arsenal.git
-    install_pipx git+https://github.com/CravateRouge/bloodyAD.git
-    install_pipx git+https://github.com/chenjj/CORScanner.git
-    install_pipx git+https://github.com/ihebski/DefaultCreds-cheat-sheet.git
-    install_pipx git+https://github.com/maurosoria/dirsearch.git
-    install_pipx git+https://github.com/login-securite/DonPAPI.git
-    install_pipx git+https://github.com/zblurx/dploot.git
-    install_pipx git+https://github.com/cddmp/enum4linux-ng.git
-    install_pipx git+https://github.com/arthaud/git-dumper.git
-    install_pipx git+https://github.com/Dramelac/GoldenCopy.git
-    install_pipx git+https://github.com/khast3x/h8mail.git
-    install_pipx git+https://github.com/almandin/krbjack.git
-    install_pipx git+https://github.com/dirkjanm/ldapdomaindump.git
-    install_pipx git+https://github.com/yaap7/ldapsearch-ad.git
-    install_pipx git+https://github.com/bee-san/Name-That-Hash.git
-    install_pipx git+https://github.com/codingo/NoSQLMap.git
-    install_pipx git+https://github.com/i3visio/osrframework.git
-    install_pipx git+https://github.com/aniqfakhrul/powerview.py.git
-    install_pipx git+https://github.com/calebstewart/pwncat.git
-    install_pipx git+https://github.com/Gallopsled/pwntools.git
-    install_pipx git+https://github.com/skelsec/pysnaffler.git
-    install_pipx git+https://github.com/the-useless-one/pywerview.git
-    install_pipx git+https://github.com/ShutdownRepo/pywhisker.git
-    install_pipx git+https://github.com/dirkjanm/ROADtools.git
-    install_pipx git+https://github.com/Tw1sm/RITM.git
-    install_pipx git+https://github.com/threat9/routersploit.git
-    install_pipx git+https://github.com/garrettfoster13/sccmhunter.git
-    install_pipx git+https://github.com/nccgroup/ScoutSuite.git
-    install_pipx git+https://github.com/EnableSecurity/sipvicious.git
-    install_pipx git+https://github.com/p0dalirius/smbclient-ng.git
-    install_pipx git+https://github.com/jtesta/ssh-audit.git
-    install_pipx git+https://github.com/sshuttle/sshuttle.git
-    install_pipx git+https://github.com/aboul3la/Sublist3r.git
-    install_pipx git+https://github.com/blacklanternsecurity/TREVORspray.git
-    install_pipx git+https://github.com/sc0tfree/updog.git
-    install_pipx git+https://github.com/EnableSecurity/wafw00f.git
-    install_pipx git+https://github.com/garrettfoster13/pre2k.git
+    install_uv git+https://github.com/fortra/impacket.git
+    install_uv git+https://github.com/ly4k/Certipy.git
+    install_uv git+https://github.com/dirkjanm/BloodHound.py.git
+    install_uv git+https://github.com/blacklanternsecurity/MANSPIDER
+    install_uv git+https://github.com/Pennyw0rth/NetExec
+    install_uv git+https://github.com/p0dalirius/Coercer.git
+    install_uv git+https://github.com/skelsec/pypykatz.git
+    install_uv git+https://github.com/dirkjanm/mitm6.git
+    install_uv git+https://github.com/Mazars-Tech/AD_Miner.git
+    install_uv git+https://github.com/zblurx/certsync.git
+    install_uv git+https://github.com/ImpostorKeanu/parsuite.git
+    install_uv git+https://github.com/AetherBlack/abuseACL.git
+    install_uv git+https://github.com/aas-n/aclpwn.py.git
+    install_uv git+https://github.com/dirkjanm/adidnsdump.git
+    install_uv git+https://github.com/androguard/androguard.git
+    install_uv git+https://github.com/angr/angr.git
+    install_uv git+https://github.com/s0md3v/Arjun.git
+    install_uv git+https://github.com/Orange-Cyberdefense/arsenal.git
+    install_uv git+https://github.com/CravateRouge/bloodyAD.git
+    install_uv git+https://github.com/chenjj/CORScanner.git
+    install_uv git+https://github.com/ihebski/DefaultCreds-cheat-sheet.git
+    install_uv git+https://github.com/maurosoria/dirsearch.git
+    install_uv git+https://github.com/login-securite/DonPAPI.git
+    install_uv git+https://github.com/zblurx/dploot.git
+    install_uv git+https://github.com/cddmp/enum4linux-ng.git
+    install_uv git+https://github.com/arthaud/git-dumper.git
+    install_uv git+https://github.com/Dramelac/GoldenCopy.git
+    install_uv git+https://github.com/khast3x/h8mail.git
+    install_uv git+https://github.com/almandin/krbjack.git
+    install_uv git+https://github.com/dirkjanm/ldapdomaindump.git
+    install_uv git+https://github.com/yaap7/ldapsearch-ad.git
+    install_uv git+https://github.com/bee-san/Name-That-Hash.git
+    install_uv git+https://github.com/codingo/NoSQLMap.git
+    install_uv git+https://github.com/i3visio/osrframework.git
+    install_uv git+https://github.com/aniqfakhrul/powerview.py.git
+    install_uv git+https://github.com/calebstewart/pwncat.git
+    install_uv git+https://github.com/Gallopsled/pwntools.git
+    install_uv git+https://github.com/skelsec/pysnaffler.git
+    install_uv git+https://github.com/the-useless-one/pywerview.git
+    install_uv git+https://github.com/ShutdownRepo/pywhisker.git
+    install_uv git+https://github.com/dirkjanm/ROADtools.git
+    install_uv git+https://github.com/Tw1sm/RITM.git
+    install_uv git+https://github.com/threat9/routersploit.git
+    install_uv git+https://github.com/garrettfoster13/sccmhunter.git
+    install_uv git+https://github.com/nccgroup/ScoutSuite.git
+    install_uv git+https://github.com/EnableSecurity/sipvicious.git
+    install_uv git+https://github.com/p0dalirius/smbclient-ng.git
+    install_uv git+https://github.com/jtesta/ssh-audit.git
+    install_uv git+https://github.com/sshuttle/sshuttle.git
+    install_uv git+https://github.com/aboul3la/Sublist3r.git
+    install_uv git+https://github.com/blacklanternsecurity/TREVORspray.git
+    install_uv git+https://github.com/sc0tfree/updog.git
+    install_uv git+https://github.com/EnableSecurity/wafw00f.git
+    install_uv git+https://github.com/garrettfoster13/pre2k.git
 else
-    log_warning "pipx not available - skipping Python tools"
+    log_warning "uv not available - skipping Python tools"
 fi
 
 # Install sliver with better error handling

@@ -1,7 +1,7 @@
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
-export PATH=$HOME/.local/bin:$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.cargo/env:$HOME/.cargo/bin:/usr/local/go/bin:/snap/bin:$PATH
+export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.cargo/bin:/usr/local/go/bin:/snap/bin:$PATH"
 
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -115,16 +115,16 @@ setopt HIST_FIND_NO_DUPS
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-if [ -f $HOME/.zsh_aliases ]; then
-  . $HOME/.zsh_aliases
+if [ -f "$HOME/.zsh_aliases" ]; then
+  . "$HOME/.zsh_aliases"
 fi
 
-if [ -f $HOME/.zsh_shortcuts ]; then
-  . $HOME/.zsh_shortcuts
+if [ -f "$HOME/.zsh_shortcuts" ]; then
+  . "$HOME/.zsh_shortcuts"
 fi
 
-if [ -f $HOME/.zsh_createdir ]; then
-  . $HOME/.zsh_createdir
+if [ -f "$HOME/.zsh_createdir" ]; then
+  . "$HOME/.zsh_createdir"
 fi
 
 # Load the pdtm plugin
@@ -132,11 +132,11 @@ if [ -f $HOME/.pdtm/pdtm.zsh ]; then
   . $HOME/.pdtm/pdtm.zsh
 fi
 
-# Load the cargo environment
-if [ -f $HOME/.cargo/env ]; then
-  . $HOME/.cargo/env
-fi
-
+# Load the cargo environment (this is typically sourced by initial_setup.sh or .profile/.zshrc)
+# if [ -f "$HOME/.cargo/env" ]; then
+#   . "$HOME/.cargo/env"
+# fi
+#
 # Load the pyenv environment
 if [ -d $HOME/.pyenv ]; then
   export PYENV_ROOT="$HOME/.pyenv"
