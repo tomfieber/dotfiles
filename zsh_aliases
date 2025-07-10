@@ -1,6 +1,11 @@
-alias ll='ls -la --group-directories-first --color=auto'
-alias ls='ls --group-directories-first --color=auto'
+# zsh_aliases
 alias fzf-wordlists='find -L /opt/lists /usr/share/wfuzz /usr/share/dirb -type f | fzf --style full'
 alias a='arsenal'
 alias fr='xrandr --output Virtual-1 --auto'
 alias john='/opt/tools/john/run/john'
+alias lla='eza -la --git --icons --color=always --group-directories-first'
+alias ll='eza -l --git --icons --color=always --group-directories-first'
+alias ls='eza --git --icons --color=always --group-directories-first'
+alias cat='bat --paging=never'
+alias cp='xcp'
+alias cd='z'

@@ -52,11 +52,8 @@ show_success() {
     echo -e "${GREEN}[✓] Successfully installed ${package}${NC}"
 }
 
-# Create necessary directories
-sudo mkdir -p /opt/tools
-
 # Copy configuration files
-sudo cp -r opt/* /opt/
+sudo cp -r opt/ /opt/
 
 # Set permissions for /opt
 sudo chown -R $USER:$USER /opt
@@ -291,19 +288,7 @@ if command -v go &> /dev/null; then
     
     # Add Go binary paths to current session PATH
     export PATH="/usr/local/go/bin:$GOPATH/bin:$PATH"
-    
-    # Install asdf
-    if go install github.com/asdf-vm/asdf/cmd/asdf@latest 2>>$LOG_FILE; then
-        show_success "asdf"
-        log_info "asdf installed successfully"
-    else
-        log_error "Failed to install asdf"
-        echo -e "${RED}[✗] Failed to install asdf${NC}"
-    fi
-else
-    log_error "Go is not available for installing Go tools"
-    echo -e "${RED}[✗] Cannot install Go tools - Go not found${NC}"
-fi
+
 
 # Set up Rust environment and install default stable toolchain
 if command -v rustup &> /dev/null; then

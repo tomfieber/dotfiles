@@ -47,6 +47,7 @@ python3-shodan
 snapd
 tesseract-ocr
 tk-dev
+tmux
 upx-ucl
 wfuzz
 wget

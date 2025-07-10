@@ -72,21 +72,14 @@ ZSH_THEME="th0m12"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git asdf direnv fzf python zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(git direnv fzf python zsh-autosuggestions zsh-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
-# asdf completions
-# append completions to fpath
-fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
 # initialise completions with ZSH's compinit
 autoload -Uz compinit && compinit
-
-# Common settings regardless of interactive status
-# asdf
-export PATH="$PATH:${ASDF_DATA_DIR:-$HOME/.asdf}/shims"
 
 # zsh history config
 export HISTFILESIZE=1000000000
@@ -128,6 +121,10 @@ fi
 
 if [ -f $HOME/.zsh_shortcuts ]; then
   . $HOME/.zsh_shortcuts
+fi
+
+if [ -f $HOME/.zsh_createdir ]; then
+  . $HOME/.zsh_createdir
 fi
 
 # Load the pdtm plugin

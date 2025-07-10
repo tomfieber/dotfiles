@@ -1,5 +1,5 @@
 #!/bin/bash
-export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.asdf/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.cargo/bin:$HOME/.cargo/env:$PATH"
 
 # Define logging function
 log_info() {
@@ -49,6 +49,7 @@ if [ "$SHELL" = "$(which zsh)" ]; then
     copy_file "$SCRIPT_DIR/zshrc" "$HOME/.zshrc" "zshrc"
     copy_file "$SCRIPT_DIR/zsh_shortcuts" "$HOME/.zsh_shortcuts" "zsh_shortcuts"
     copy_file "$SCRIPT_DIR/zsh_aliases" "$HOME/.zsh_aliases" "zsh_aliases"
+    copy_file "$SCRIPT_DIR/zsh_createdir" "$HOME/.zsh_createdir" "createdir script"
     
     # Only copy theme if oh-my-zsh is installed
     if [ -d "$HOME/.oh-my-zsh" ]; then
@@ -67,10 +68,6 @@ else
     copy_file "$SCRIPT_DIR/bashrc" "$HOME/.bashrc" "bashrc" 
 fi
 
-log_info "Setting up asdf and node"
-#asdf plugin add nodejs || log_info "nodejs plugin might already be installed"
-asdf install nodejs latest
-asdf set nodejs latest
 log_info "Installing npm packages globally"
 sudo npm install -g pp-finder
 
