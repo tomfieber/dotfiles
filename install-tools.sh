@@ -446,7 +446,26 @@ if command_exists cargo; then
     fi
     
     install_rust feroxbuster 
-    install_rust rustscan    
+    install_rust rustscan
+    install_rust bat --locked
+    install_rust ripgrep
+    install_rust eza
+    install_rust rm-improved
+    install_rust cargo-audit
+    install_rust cargo-binstall
+    install_rust cargo-update
+    install_rust xcp
+    install_rust zoxide --locked
+    install_rust du-dust
+    install_rust ripgrep
+    install_rust fd-find
+    install_rust sd
+    install_rust procs
+    install_rust bottom --locked
+    install_rust topgrade --locked
+    install_rust broot --locked
+    install_rust tokei
+ 
 else
     log_warning "Cargo not available - skipping Rust tools"
 fi    
