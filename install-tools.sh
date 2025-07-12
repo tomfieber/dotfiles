@@ -536,7 +536,6 @@ if command_exists go; then
     install_go github.com/RedTeamPentesting/pretender@latest
     install_go github.com/EgeBalci/amber@latest
     install_go github.com/tomnomnom/anew@latest
-    install_go github.com/asdf-vm/asdf/cmd/asdf@latest
     install_go github.com/tomnomnom/assetfinder@latest
     install_go github.com/lobuhi/byp4xx@latest
     install_go github.com/lc/gau/v2/cmd/gau@latest
