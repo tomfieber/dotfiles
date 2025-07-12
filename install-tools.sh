@@ -519,6 +519,7 @@ if [ "$INSTALL_GITHUB_TOOLS" = true ]; then
     git_clone_tool https://github.com/synacktiv/php_filter_chain_generator.git /opt/tools/php_filter_chain_generator
     install_massdns
     git_clone_tool https://github.com/tomfieber/hunter.git /opt/tools/hunter
+    git_clone_tool https://github.com/s0md3v/Corsy.git /opt/tools/Corsy
 else
     log_info "Skipping GitHub-based tools (use --github-tools flag to install them)"
     SKIPPED_INSTALLS+=("GitHub tools (--github-tools not specified)")
@@ -545,6 +546,11 @@ if command_exists go; then
     install_go github.com/BishopFox/jsluice/cmd/jsluice@latest
     install_go github.com/tomnomnom/waybackurls@latest
     install_go github.com/projectdiscovery/chaos-client/cmd/chaos@latest
+    install_go github.com/ethicalhackingplayground/bxss/v2/cmd/bxss@latest
+    install_go github.com/PentestPad/subzy@latest
+    install_go github.com/rix4uni/xsschecker@latest
+    install_go github.com/KathanP19/Gxss@latest
+    install_go github.com/Emoe/kxss
     
     # Install trufflehog via script if Go binary doesn't exist
     if ! command_exists trufflehog; then
@@ -619,11 +625,11 @@ if command_exists pipx; then
     install_uv git+https://github.com/p0dalirius/smbclient-ng.git
     install_uv git+https://github.com/jtesta/ssh-audit.git
     install_uv git+https://github.com/sshuttle/sshuttle.git
-    install_uv git+https://github.com/aboul3la/Sublist3r.git
     install_uv git+https://github.com/blacklanternsecurity/TREVORspray.git
     install_uv git+https://github.com/sc0tfree/updog.git
     install_uv git+https://github.com/EnableSecurity/wafw00f.git
     install_uv git+https://github.com/garrettfoster13/pre2k.git
+    install_uv git+https://github.com/s0md3v/uro.git
 else
     log_warning "uv not available - skipping Python tools"
 fi
