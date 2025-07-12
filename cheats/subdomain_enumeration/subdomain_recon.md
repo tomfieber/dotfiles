@@ -17,7 +17,7 @@ subfinder -d <domain> -all -recursive > <outfile>
 
 ## Find alive subdomains with httpx 
 ```
-cat <input file> | httpx -ports 80,443,8080,8000,8888 -threads <threads> > <output file>
+cat <inputfile> | httpx -ports 80,443,8080,8000,8888 -threads <threads> > <outputfile>
 ```
 
 # Subdomain takeover check
@@ -28,5 +28,5 @@ cat <input file> | httpx -ports 80,443,8080,8000,8888 -threads <threads> > <outp
 
 ## Check for subdomain takeover with subzy
 ```
-subzy run --targets <targets file> --concurrency <concurrency> --hide_fails --verify_ssl
+subzy run --targets <targets> --concurrency <concurrency> --hide_fails --verify_ssl
 ```
