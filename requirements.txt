@@ -1,3 +1,5 @@
+golang
+rustup
 antiword
 autoconf
 automake
@@ -54,3 +56,5 @@ wget
 xz-utils
 zlib1g-dev
 zsh
+zsh-autosuggestions
+zsh-syntax-highlighting
