@@ -570,9 +570,9 @@ else
     log_warning "Go not available - skipping Go tools"
 fi 
 
-# Installing pipx tools (removed duplicates)
-if command_exists pipx; then
-    log_info "Installing Python tools via pipx"
+# Installing Python tools (removed duplicates)
+if command_exists uv; then
+    log_info "Installing Python tools via uv"
     
     # Security tools
     install_uv git+https://github.com/fortra/impacket.git
@@ -655,52 +655,6 @@ install_sliver
 
 echo "=========================================="
 echo
-
-# Install zsh plugins with better error handling
-install_zsh_plugins() {
-    if [ -z "${ZSH_CUSTOM:-}" ] && [ ! -d "$HOME/.oh-my-zsh" ]; then
-        log_warning "Oh My Zsh not found - skipping zsh plugins. Run initial_setup.sh first to install Oh My Zsh."
-        return 0
-    fi
-    
-    local zsh_custom="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-    
-    # Check if plugins are already installed
-    if [ -d "$zsh_custom/plugins/zsh-autosuggestions" ] && [ -d "$zsh_custom/plugins/zsh-syntax-highlighting" ]; then
-        log_info "Zsh plugins already installed from initial setup"
-        SKIPPED_INSTALLS+=("zsh-autosuggestions (already installed)")
-        SKIPPED_INSTALLS+=("zsh-syntax-highlighting (already installed)")
-        return 0
-    fi
-    
-    # zsh-autosuggestions
-    if [ ! -d "$zsh_custom/plugins/zsh-autosuggestions" ]; then
-        log_info "Installing zsh-autosuggestions plugin"
-        if git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions "$zsh_custom/plugins/zsh-autosuggestions" 2>>"$LOG_FILE"; then
-            SUCCESSFUL_INSTALLS+=("zsh-autosuggestions")
-        else
-            FAILED_INSTALLS+=("zsh-autosuggestions")
-        fi
-    else
-        log_info "zsh-autosuggestions plugin already installed"
-        SKIPPED_INSTALLS+=("zsh-autosuggestions (already installed)")
-    fi
-    
-    # zsh-syntax-highlighting  
-    if [ ! -d "$zsh_custom/plugins/zsh-syntax-highlighting" ]; then
-        log_info "Installing zsh-syntax-highlighting plugin"
-        if git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$zsh_custom/plugins/zsh-syntax-highlighting" 2>>"$LOG_FILE"; then
-            SUCCESSFUL_INSTALLS+=("zsh-syntax-highlighting")
-        else
-            FAILED_INSTALLS+=("zsh-syntax-highlighting")
-        fi
-    else
-        log_info "zsh-syntax-highlighting plugin already installed"
-        SKIPPED_INSTALLS+=("zsh-syntax-highlighting (already installed)")
-    fi
-}
-
-install_zsh_plugins
 
 # Print installation summary
 print_summary() {

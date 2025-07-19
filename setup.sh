@@ -20,3 +20,10 @@ ln -s `pwd`/nvim/ "$HOME/.config/nvim"
 
 # Link tmux directory
 ln -s `pwd`/tmux/ "$HOME/.config/tmux"
+
+echo "Installing npm packages globally"
+sudo npm install -g pp-finder
+
+echo "Installing pdtm"
+go install github.com/projectdiscovery/pdtm/cmd/pdtm@latest
+pdtm -ia
