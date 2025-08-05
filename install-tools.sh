@@ -26,13 +26,8 @@ echo "Rust tools installation complete."
 
 # Install Python tools
 echo "Installing Python tools..."
-xargs -I {} sh -c 'pipx install {}' < ./tools/python-tools.txt
+xargs -I {} sh -c 'uv tool install {}' < ./tools/python-tools.txt
 echo "Python tools installation complete."
-
-# Install zsh plugins
-echo "Installing zsh plugins..." 
-xargs -I {} sh -c 'git clone {} "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/$(basename {})"' < ./tools/zsh-plugins.txt
-echo "Zsh plugins installation complete."
 
 
 # Install complete

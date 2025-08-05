@@ -26,41 +26,11 @@ cp -r ./cheats/ ~/.cheats
 sudo apt update
 xargs -I {} sh -c 'sudo apt install -y {}' < ./tools/apt-tools.txt
 
-# Install oh-my-zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-
 # Install tmux plugins
 if [ -d ~/.tmux/plugins/tpm ]; then
   echo "tmux plugin manager already installed."
 else
   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-fi
-
-echo "Installing zsh plugins..."
-while IFS= read -r plugin_url; do
-    # Skip empty lines
-    if [ -z "$plugin_url" ]; then
-        continue
-    fi
-
-    repo_name=$(basename "$plugin_url")
-    dest_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/$repo_name"
-
-    if [ -d "$dest_dir" ]; then
-        echo "Plugin '$repo_name' already exists. Skipping."
-    else
-        git clone "$plugin_url" "$dest_dir"
-    fi
-done < ./tools/zsh-plugins.txt
-echo "Zsh plugins installation complete."
-
-# Moving the theme file to the custom themes directory
-if [ -d "$ZSH_CUSTOM/themes" ]; then
-    cp ./zsh/th0m12.zsh-theme "$ZSH_CUSTOM/themes/th0m12.zsh-theme"
-else
-    echo "Creating themes directory at $ZSH_CUSTOM/themes"
-    mkdir -p "$ZSH_CUSTOM/themes"
-    cp ./zsh/th0m12.zsh-theme "$ZSH_CUSTOM/themes/th0m12.zsh-theme"
 fi
 
 # Promp the user to restart the system
