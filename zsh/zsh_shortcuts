@@ -1,207 +1,53 @@
 autoload -Uz colors && colors
 
-# Helper function to validate IP addresses
-validate_ip() {
-    local ip=$1
-    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-        return 0
-    fi
-    return 1
-}
+autoload -Uz colors && colors
 
-# Helper function to validate port numbers
-validate_port() {
-    local port=$1
-    if [[ $port =~ ^[0-9]+$ ]] && [[ $port -ge 1 ]] && [[ $port -le 65535 ]]; then
-        return 0
-    fi
-    return 1
-}
+# Function to check a domain against the Dehashed API for breached credentials.
+dehashed_check() {
+    
+    DEHASHED_EMAIL="$DEHASHED_USER"
+    DEHASHED_API_KEY="$DEHASHED_API_KEY"
 
-function ligolo-setup() {
-    # Get VPN interface and IP with better error handling
-    local interface
-    interface="$(ip tuntap show 2>/dev/null | grep -v ligolo | cut -d : -f1 | head -n 1)"
-    
-    if [[ -z "$interface" ]]; then
-        echo "❌ Error: No VPN interface found. Are you connected to a VPN?" >&2
-        return 1
-    fi
-    
-    local ip
-    ip="$(ip a s "${interface}" 2>/dev/null | grep -o -P '(?<=inet )[0-9]{1,3}(\.[0-9]{1,3}){3}' | head -n 1)"
-    
-    if [[ -z "$ip" ]]; then
-        echo "❌ Error: Could not determine IP address for interface ${interface}" >&2
-        return 1
-    fi
-    
-    # Get user input with validation
-    echo "Name of the user to add (Enter for current user): "
-    read NAME
-    local final_name=${NAME:-$USER}
-    
-    # Validate username
-    if [[ ! "$final_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-        echo "❌ Error: Invalid username. Use only alphanumeric characters, hyphens, and underscores." >&2
-        return 1
-    fi
-    
-    echo "Port to listen on (Enter for default port 11601): "
-    read PORT
-    local final_port=${PORT:-11601}
-    
-    # Validate port
-    if ! validate_port "$final_port"; then
-        echo "❌ Error: Invalid port number. Must be between 1-65535." >&2
-        return 1
-    fi
-    
-    # Check if ligolo interface already exists
-    if ip link show ligolo >/dev/null 2>&1; then
-        echo "⚠️  Warning: ligolo interface already exists. Removing first..."
-        sudo ip link delete ligolo 2>/dev/null
-    fi
-    
-    # Create tunnel interface - removed eval for security
-    echo "🔧 Creating ligolo tunnel interface..."
-    if ! sudo ip tuntap add user "$final_name" mode tun ligolo; then
-        echo "❌ Error: Failed to create ligolo interface" >&2
-        return 1
-    fi
-    
-    if ! sudo ip link set ligolo up; then
-        echo "❌ Error: Failed to bring up ligolo interface" >&2
-        return 1
-    fi
-    
-    # Check if ligolo-ng proxy exists
-    local proxy_path="/opt/tools/ligolo-ng/proxy"
-    if [[ ! -x "$proxy_path" ]]; then
-        echo "❌ Error: ligolo-ng proxy not found at $proxy_path" >&2
-        echo "   Please install ligolo-ng first" >&2
-        return 1
-    fi
-    
-    echo
-    print -- $fg_bold[green]✅ Ligolo interface created successfully!$reset_color
-    print -- $fg_bold[green]📡 Use the following commands to connect back to the server:$reset_color
-    echo
-    echo "==Windows=="
-    echo "Start-Process -FilePath 'C:\\Windows\\Tasks\\agent.exe' -ArgumentList '-connect','${ip}:${final_port}','-ignore-cert'"
-    echo
-    echo "==Linux=="
-    echo "nohup ./agent -connect ${ip}:${final_port} -ignore-cert &"
-    echo
-    echo "🚀 Starting ligolo-ng proxy on ${ip}:${final_port}..."
-    
-    # Start proxy - removed eval for security
-    "$proxy_path" -laddr "0.0.0.0:${final_port}" -selfcert
-}
-
-function add-ligolo-route() {
-    echo "Enter the range to add (e.g., 192.168.1.0/24): "
-    read range
-    
-    # Validate CIDR notation
-    if [[ ! "$range" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$ ]]; then
-        echo "❌ Error: Invalid CIDR notation. Example: 192.168.1.0/24" >&2
-        return 1
-    fi
-    
-    # Check if ligolo interface exists
-    if ! ip link show ligolo >/dev/null 2>&1; then
-        echo "❌ Error: ligolo interface not found. Run ligolo-setup first." >&2
-        return 1
-    fi
-    
-    # Add route with error checking
-    if sudo ip route add "$range" dev ligolo; then
-        echo "✅ Route added successfully: $range via ligolo"
-        echo "📋 Current ligolo routes:"
-        ip route show dev ligolo 2>/dev/null || echo "No routes found"
-    else
-        echo "❌ Error: Failed to add route $range" >&2
-        return 1
-    fi
-}
-
-function add-ligolo-route() {
-    echo "Enter the range to add (e.g., 192.168.1.0/24): "
-    read range
-    
-    # Validate CIDR notation
-    if [[ ! "$range" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$ ]]; then
-        echo "❌ Error: Invalid CIDR notation. Example: 192.168.1.0/24" >&2
-        return 1
-    fi
-    
-    # Check if ligolo interface exists
-    if ! ip link show ligolo >/dev/null 2>&1; then
-        echo "❌ Error: ligolo interface not found. Run ligolo-setup first." >&2
-        return 1
-    fi
-    
-    # Add route with error checking
-    if sudo ip route add "$range" dev ligolo; then
-        echo "✅ Route added successfully: $range via ligolo"
-        echo "📋 Current ligolo routes:"
-        ip route show dev ligolo 2>/dev/null || echo "No routes found"
-    else
-        echo "❌ Error: Failed to add route $range" >&2
-        return 1
-    fi
-}
-
-function genadname() {
-    # Validate input
+    # 1. Check if a domain was provided as an argument.
     if [[ -z "$1" ]]; then
-        echo "❌ Usage: genadname \"First Last\"" >&2
-        echo "   Example: genadname \"John Doe\"" >&2
+        echo "Usage: dehashed_check <domain.com>" >&2
+        echo "Example: dehashed_check example.com" >&2
         return 1
     fi
+
+    # 2. Check if jq is installed.
+    if ! command -v jq &> /dev/null; then
+        echo "Error: 'jq' is not installed. Please install it to parse the JSON response." >&2
+        echo "On Debian/Ubuntu: sudo apt-get install jq" >&2
+        echo "On macOS (Homebrew): brew install jq" >&2
+        return 1
+    fi
+
+    local domain="$1"
+    echo "🔍 Searching for breached credentials for domain: $domain"
+    echo "---------------------------------------------------"
+
+    # 3. Make the API call using curl and authenticate with your credentials.
+    # The output is piped to jq for pretty-printing the relevant fields.
+    curl -s -u "$DEHASHED_EMAIL:$DEHASHED_API_KEY" \
+         -H "Accept: application/json" \
+         "https://api.dehashed.com/search?query=domain:\"$domain\"" | \
+         jq '.entries[] | {email: .email, username: .username, password: .password, source: .obtained_from}'
     
-    # Process each line of input (supports multiple names)
-    echo "$1" | while IFS= read -r line; do
-        # Skip empty lines
-        [[ -z "$line" ]] && continue
-        
-        # Parse names with better handling of edge cases
-        local firstname lastname
-        firstname=$(echo "$line" | awk '{print $1}' | tr '[:upper:]' '[:lower:]')
-        lastname=$(echo "$line" | awk '{print $2}' | tr '[:upper:]' '[:lower:]')
-        
-        # Validate that we have both first and last names
-        if [[ -z "$firstname" || -z "$lastname" ]]; then
-            echo "⚠️  Warning: Skipping invalid name format: '$line'" >&2
-            continue
-        fi
-        
-        # Generate variations more efficiently using printf
-        local first_initial="${firstname:0:1}"
-        local last_initial="${lastname:0:1}"
-        local first_three="${firstname:0:3}"
-        local last_three="${lastname:0:3}"
-        
-        # Output all variations with comments for clarity
-        cat << EOF
-${firstname}${lastname}
-${lastname}${firstname}
-${firstname}.${lastname}
-${lastname}.${firstname}
-${lastname}${first_initial}
-${firstname}${last_initial}
-${first_initial}.${lastname}
-${first_three}${last_three}
-${first_three}.${last_three}
-${first_initial}${lastname}
-${lastname}.${first_initial}
-${last_three}_${first_three}
-${first_three}_${last_three}
-${firstname}
-${lastname}
-${last_initial}.${firstname}
-${last_initial}${firstname}
-EOF
-    done
+    echo "---------------------------------------------------"
+    echo "✅ Search complete."
+}
+
+crtsh() {
+    # Check if a domain argument is provided
+    if [[ -z "$1" ]]; then
+        echo "Usage: crtsh <domain>" >&2
+        return 1
+    fi
+
+    # Check crt.sh
+    curl -s "https://crt.sh/?q=%.${1}&output=json" | \
+      jq -r '.[].name_value' | \
+      sed 's/^\*\.//' | \
+      sort -u
 }

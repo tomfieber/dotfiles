@@ -33,6 +33,9 @@ else
   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 fi
 
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # Promp the user to restart the system
 echo "Setup complete. Please restart your terminal or system to apply the changes."
 # If you are using a Mac, you might want to run the following command to apply changes:
