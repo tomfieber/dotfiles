@@ -4,9 +4,6 @@ autoload -Uz colors && colors
 
 # Function to check a domain against the Dehashed API for breached credentials.
 dehashed_check() {
-    
-    DEHASHED_EMAIL="$DEHASHED_USER"
-    DEHASHED_API_KEY="$DEHASHED_API_KEY"
 
     # 1. Check if a domain was provided as an argument.
     if [[ -z "$1" ]]; then
